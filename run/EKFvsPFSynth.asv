@@ -1,0 +1,43 @@
+function [] = EKFvsPFSynth()
+
+doRuns  = 0;
+doPlots = 1;
+
+if(doRuns)
+
+    numParticles = [10 50 100 200 500 1000];
+    numIterations = 25;
+
+    for n = 1:numIterations
+        for numP = 1:length(numParticles)
+            rmse = runSynth('Synth',15, 15, 10000, 4, 0, numParticles(numP), 100, 30^2);
+            meanError(n,numP,:) = mean(rmse);
+        end
+    end
+
+    save '../results/EKFvsPF.mat';
+end
+
+if(doPlots)
+    load '../results/EKFvsPF.mat';
+    close all;
+    errs   = squeeze(mean(meanError)); % Compute mean error
+    var    = squeeze(var(meanError));  % Compute variance
+    stdErr = squeeze(std(meanError));  % Compute standard deviation
+    
+    t = tinv(0.975, numIterations - 1);
+    
+    
+    
+    figure;
+    errorbar(numParticles, errs(:,1), stdErr(:,1));
+    hold on;
+    errorbar(numParticles, errs(:,2), stdErr(:,2),'r');
+    axis tight;
+    xlim([0 1000]);
+    ylim([23 50]);
+    legend('EKF', 'PF');
+    xlabel('Number of particles');
+    ylabel('RMSE (Hz)')
+    fmakep5(2,4);
+end
