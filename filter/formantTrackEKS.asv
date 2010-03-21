@@ -71,7 +71,7 @@ for k = 1:N
     lgLkl = lgLkl + gaussian_prob(e, zeros(1,length(e)), S, 1); 
    
     % Update steps
-    m_up(:,k)    = m_pred(:,k) + K*(y(:,k)-ypred);
+    m_up(:,k)    = m_pred(:,k) + K*e;
     P_up(:,:,k)  = (eye(length(m_up(:,k)))-K*H)*P_pred(:,:,k);
    
     if(k > 1)
@@ -106,9 +106,8 @@ for k = 1:N
         
         inds = m_pred(:,k+1) > fs/2;
         if(sum(inds > 0))
-           m_pred(inds,k+1) = fs/2-(fs/2 - m_pred(:,k+1));
+           m_pred(inds,k+1) = fs/2-(m_pred(inds,k+1)-fs/2);
         end
-        
     end
 end
 

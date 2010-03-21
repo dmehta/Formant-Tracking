@@ -1,7 +1,7 @@
-function [H] = getH_FZ(frmVals, bwVals, numFormants, cepOrder, fs)
+function [H] = getH_FZ(freqVals, bwVals, numFormants, cepOrder, fs)
 
 % INPUT
-%  frmVals = [formantFrq zeroFreq]
+%  freqVals = [formantFrq zeroFreq]
 %  bwVals  = [formantBW zeroBW]
 %
 % Return linear approximation of the nonlinear observation function h()
@@ -12,14 +12,16 @@ function [H] = getH_FZ(frmVals, bwVals, numFormants, cepOrder, fs)
 % Created: 02/12/10
 % Modified: 02/15/10
 
-H = zeros(cepOrder, length(frmVals));
+H = zeros(cepOrder, length(freqVals));
 for i = 1:cepOrder
+    % This loop updates the matrix based on pole values
     for j = 1:numFormants
         bw = exp(-pi * i * bwVals(j)/fs);
-        H(i,j) =  -4*pi/fs*bw*sin(2*pi*i*frmVals(j)/fs);
+        H(i,j) =  -4*pi/fs*bw*sin(2*pi*i*freqVals(j)/fs);
     end
-    for j = numFormants + 1:length(frmVals)
+    % This loop updates the value above based on zero values
+    for j = numFormants + 1:length(freqVals)
         bw = exp(-pi * i * bwVals(j)/fs);
-        H(i,j) =  4*pi/fs*bw*sin(2*pi*i*frmVals(j)/fs);
+        H(i,j) =  4*pi/fs*bw*sin(2*pi*i*freqVals(j)/fs);
     end
 end
