@@ -10,7 +10,7 @@ p = 2; % Number of poles
 q = 2; % Number of zeros
 
 
-rz = .9; thetaz =  pi/4; % Complex-conjugate zero pair: (+/-  pi/4, .9)
+rz = .9; thetaz =  pi/4; % Complex-conjugate zero pair:  (+/-  pi/4, .9)
 rp = .99; thetap = pi/3;  % Complex-conjugate pole pair: (+/- pi/3, .99)
 
 % Create an ARMA model by filtering a white noise sequence
