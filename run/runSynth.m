@@ -7,16 +7,22 @@ function [rmse] = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackB
 
 % INPUT
 %
-% testMethod: Synth, VTR, Praat, WS
-% snr_dB    : How much observation noise to add
-% cep_order : How many cepstal coefficients to include in the observations
-% fs        : Sampling rate at which the observations are made (fake here)
-% num_formants: Number of formants that we should track
+% testMethod    : Synth, VTR, PRAAT, WS
+% snr_dB        : How much observation noise to add
+% cep_order     : How many cepstal coefficients to include in the observations
+% fs            : Sampling rate at which the observations are made (fake here)
+% numFormants   : Number of formants that we should track
+% trackBW       : Flag whether to track (1) or not track (0) bandwidths
+% numParticles  : ?
+% varargin      : Dependent on testMethod. If
+%                       Synth: number of observations, process noise variance
+%                       VTR: data filename, sample index
+%                       PRAAT, WS: data filename
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
 % Synthetic Example:
-% runSynth('Synth',105, 15, 16000, 4, 0, [], 30^2);
+% runSynth('Synth',105, 15, 16000, 4, 0, [], 30, 2);
 %
 % VTR Database Example:
 % runSynth('VTR', 15, 15, 16000, 4, 1, [], '../data/VTR_Timit/allVTRTracks.mat', 35);
@@ -89,7 +95,7 @@ switch testMethod
         end
 end
 
-% Now formant tracks have been created, generate observation sequence
+% Now that formant tracks have been created, generate observation sequence
 [y, oNoiseVar] = genNoisyObser(snr_dB, trueState, BW_data, cepOrder, fs);
 
 numObs = length(y); % Record number of observations
