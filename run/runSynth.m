@@ -136,7 +136,7 @@ formantInds = ones(numObs,numFormants);
 
 % General Settings
 % Decision Flags for Tracking Processes, and parameters
-algFlag = [0 1 0 0 0]; % Select 1 to run, 0 not to
+algFlag = [1 0 0 0 0]; % Select 1 to run, 0 not to
 EKF = 1; EKS = 2; EKS_EM = 3; PF = 4; RBPF = 5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -156,8 +156,13 @@ display(['Initial state estimates set at: ' num2str(x0')])
 countTrack = 1; % Counter for storing results
 
 % Initialize root-mean-square error matrices:
-rmse    = zeros(numFormants, sum(algFlag));
-relRmse = zeros(numFormants, sum(algFlag));
+if(trackBW)
+    rmse    = zeros(numFormants*2, sum(algFlag));
+    relRmse = zeros(numFormants*2, sum(algFlag));
+else
+    rmse    = zeros(numFormants, sum(algFlag));
+    relRmse = zeros(numFormants, sum(algFlag));
+end
 
 % Run Extended Kalman Filter
 if algFlag(EKF)
@@ -171,10 +176,19 @@ if algFlag(EKF)
     titleCell(2,countTrack+1) = {'g-.'};
 
     % Compute and display RMSE and relative RMSE
-    for j = 1:numFormants
-        rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
-        relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
-    end
+    if(trackBW)
+        trueStateF_BW = [trueState; BW_data];
+        for j = 1:numFormants*2
+            rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueStateF_BW(j,:)))/sqrt(numObs);
+            relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueStateF_BW(j,:)))*sqrt(numObs);
+        end
+        
+    else
+        for j = 1:numFormants
+            rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
+            relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
+        end
+    end        
 
     display(['Average RMSE: ' num2str(mean(rmse(:,countTrack)))]);
     countTrack = countTrack + 1;     % Increment counter
@@ -268,7 +282,7 @@ if algFlag(RBPF)
     t0 = clock;
     formantInds = ones(size(y,2),numFormants);
     numParticles = 20;
-    [x_estRBPF x_errVarRBPF,pEst] = formantTrackRBPF(numParticles, y, formantInds, pNoiseVar, oNoiseVar,fs,trBW_flag,BW_data,initState,F);
+    [x_estRBPF,x_errVarRBPF,pEst] = formantTrackRBPF(numParticles, y, formantInds, pNoiseVar, oNoiseVar,fs,trBW_flag,BW_data,initState,F);
 
     disp(strcat('MMSE estimate of lambda: ', num2str(1/pEst)));
     %Track estimate into data cube for plot routines
@@ -291,7 +305,7 @@ if(doPlots)
 
     %Initial Plotting Variables
     titleCell(1,1)  = {'True State'};   % Keeps track of trackers used for plotter
-    titleCell(2,1)  = {'g'};            % Color for true state plot
+    titleCell(2,1)  = {'r'};            % Color for true state plot
 
     % A basic plotting routine to visualize results
     if(trackBW)
