@@ -1,28 +1,29 @@
 %% runSynth_ARMApq
 clear
+close all
 
 fs = 10e3; % Hz
 cepOrder = 15;
-dur = 0.25; % in s
-N = round(dur*fs);
 
-% set center frequencies and bandwidths
+%% set center frequencies and bandwidths
 % F = []; Fbw = [];
 % F = [500 1500 2500 3500]; Fbw = 80+40*[0:3];
-F = [900 1500]; Fbw = 80+40*[0:13];
+F = [900 1500]; Fbw = 80+40*[0:1];
 F=F'; Fbw = Fbw';
 
 % Z = []; Zbw = [];
-Z = 1000; Zbw = 100;
+Z = 925; Zbw = 80;
 % Z = [500 1500 2500 3500]+100; Zbw = 80+40*[0:3];
-% Z=Z'; Zbw = Zbw';
-
-[num, denom] = fb2tf(F, Fbw, Z, Zbw, fs);
-[spec, freq] = freqz(num, denom, 512, fs);
-% figure, freqz(num, denom, 512, fs)
-
+Z=Z'; Zbw = Zbw';
 
 %% Create an ARMA model by filtering a white noise sequence
+
+% Compute transfer function coefficients
+[num, denom] = fb2tf(F, Fbw, Z, Zbw, fs);
+[spec, freq] = freqz(num, denom, 512, fs);
+
+dur = 0.25; % in s
+N = round(dur*fs);
 x = filter(num, denom, randn(N,1));
 
 figure, subplot(211)
@@ -58,16 +59,96 @@ disp('Sys ID toolbox ARMA estimates');
 disp(['AR Coeffs: ' num2str(m.a)]); % Estimated AR Coefficients
 disp(['MA Coeffs: ' num2str(m.c)]); % Estimated MA Coefficients
 
-%%
-% % C = lpc2cz(-denom(2:end)',-num(2:end)',cepOrder) % for speech to LPCC coefficients
-% C = lpc2c(-denom(2:end),cepOrder) % for speech to LPCC coefficients
-% 
-% %%
-% % C2 = fb2cpz(F, Fbw, Z, Zbw, cepOrder, fs); % for estimation equation
-% % C2'
-% 
-% C2 = fb2cp(F, Fbw, cepOrder, fs); % for estimation equation
-% C2'
-% 
-% %%
+%% Calculate LPCC coefficients in each window
+wType = 'hamming';  % window type
+wLengthMS  = 20;    % Length of window (in milliseconds)
+wOverlap = 0.5;     % Factor of overlap of window
+lpcOrder = 4;       % Number of LPC coefficients
+zOrder = 2;         % Number of MA coefficients
+peCoeff = .95;     % Pre-emphasis factor
 
+wLength = floor(wLengthMS/1000*fs);
+wLength = wLength + (mod(wLength,2)~=0); % Force even
+win = feval(wType,wLength);
+
+y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
+
+%% Do a plot of the observations
+figure;
+imagesc(log(abs(y))); colorbar;
+title('Cepstral Coefficients');
+xlabel('Frame Number');
+
+%% %%%%%%%%%%%%%%%%%%% Tracking Algorithms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Set parameters for tracking algorithms %%%
+% x_{k+1} = Fx_{k} + w_k, w_k ~ N(0, Q)
+% y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
+% We need to set the parameters: F, Q and R
+% H is obtained in the EKF via linearization about the state
+
+nP = length(F);
+nZ = length(Z);
+
+% Use hardcoded variance values if wvsurfer not available
+qFormantVar = 500000;
+qBWVar = 5000;
+oNoiseVar = 1;
+
+Fmatrix = eye(nP*2 + nZ*2);   % Process Matrix F
+% Q = diag(var(trueState,0,2));      % Get state variance from read in tracks
+Q = diag([ones(nP+nZ,1)*qFormantVar; ones(nP+nZ,1)*qBWVar]);
+R = oNoiseVar*eye(cepOrder);       % Measurement noise covariance matrix R
+
+bwFlag = 1; % 0 - Use loaded bandwidths, 1 - Average bandwidths
+bwStates = genTrackBW(bwFlag,[Fbw; Zbw]);
+
+% A voice activity detector is not used here in the synthetic case
+formantInds = ones(N,nP + nZ);
+
+% General Settings
+algFlag = [1 0]; % Select 1 to run, 0 not to
+EKF = 1; EKS = 2;
+
+% Initial state of formant trackers
+% x0 = trueState(:,1);
+x0 = [F; Z];
+
+countTrack = 1; % Counter for storing results
+% Initialize root-mean-square error matrices:
+rmse    = zeros(nP + nZ, sum(algFlag));
+relRmse = zeros(nP + nZ, sum(algFlag));
+
+%% Run Extended Kalman Filter
+if algFlag(EKF)
+    smooth = 0;
+    [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
+
+    %Track estimate into data cube for plot routines
+    estTracks(:,:,countTrack) = x_estEKF;
+    estVar(:,:,:,countTrack) = x_errVarEKF;
+    titleCell(1,countTrack+1) = {'EKF'};
+    titleCell(2,countTrack+1) = {'g-.'};
+
+    countTrack = countTrack + 1;     % Increment counter
+end
+
+% Run Extended Kalman Smoother
+if algFlag(EKS)
+    smooth = 1;
+    [x_estEKS x_errVarEKS] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
+
+    % Track estimate into data cube for plot routines
+    estTracks(:,:,countTrack) = x_estEKS;
+    estVar(:,:,:,countTrack) = x_errVarEKS;
+    titleCell(1,countTrack+1) = {'EKS'};
+    titleCell(2,countTrack+1) = {'b:'};
+
+end
+
+%Initial Plotting Variables
+titleCell(1,1)  = {'True State'};   % Keeps track of trackers used for plotter
+titleCell(2,1)  = {'r'};            % Color for true state plot
+
+% A basic plotting routine to visualize results
+plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
+plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);

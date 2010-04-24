@@ -4,7 +4,7 @@ function cepCoeffs = ar2cp(arCoeffs, cepOrder)
 % of the corresponding real cepstrum
 %
 % INPUT:
-%    arCoeffs: p x numObs -- the ar coefficients for each frame of data
+%    arCoeffs: p x 1 -- the ar coefficients
 %    cepOrder: Number of cepstral coefficients to compute
 % OUTPUT:
 %    C - LPC Cepstral coefficients

@@ -14,9 +14,9 @@
 %% scenario 1
 nP = 4;
 nZ = 4;
-N = 30;
+N = 100;
 pNoiseVar = 1;
-snr_dB = 100;
+snr_dB = 40;
 cepOrder = 15;
 fs = 16e3;
 %trackBW = 0; % don't know how to track BW yet

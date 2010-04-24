@@ -1,4 +1,4 @@
-function [] = runSynthZ(nP, nZ, N, pNoiseVar, snr_dB, cepOrder, fs)
+function rmse = runSynthZ(nP, nZ, N, pNoiseVar, snr_dB, cepOrder, fs)
 
 % Track poles and zeros (no bandwidths) and on synthetic data
 % Author: Daniel Rudoy
