@@ -1,4 +1,4 @@
-function [rmse] = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackBW, numParticles, varargin)
+function [rmse] = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackBW, numParticles, doPlots, varargin)
 % Test tracking algorithms using synthetic data
 %
 % Author: Daniel Rudoy
@@ -9,11 +9,13 @@ function [rmse] = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackB
 %
 % testMethod    : Synth, VTR, PRAAT, WS
 % snr_dB        : How much observation noise to add
-% cep_order     : How many cepstal coefficients to include in the observations
+% cepOrder     : How many cepstal coefficients to include in the observations
 % fs            : Sampling rate at which the observations are made (fake here)
 % numFormants   : Number of formants that we should track
 % trackBW       : Flag whether to track (1) or not track (0) bandwidths
 % numParticles  : ?
+% doPlots       : Flag for whether to plot (1) or not to plot (0) estimates
+%                       and ground truth tracks
 % varargin      : Dependent on testMethod. If
 %                       Synth: number of observations, process noise variance
 %                       VTR: data filename, sample index
@@ -22,17 +24,17 @@ function [rmse] = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
 % Synthetic Example:
-% runSynth('Synth',105, 15, 16000, 4, 0, [], 30, 2);
+% runSynth('Synth',105, 15, 16000, 4, 0, [], 1, 30, 2);
 %
 % VTR Database Example:
-% runSynth('VTR', 15, 15, 16000, 4, 1, [], '../data/VTR_Timit/allVTRTracks.mat', 35);
+% runSynth('VTR', 15, 15, 16000, 4, 1, [], 1, '../data/VTR_Timit/allVTRTracks.mat', 35);
 %
 % PRAAT and Wavesurfer Examples. PRAAT has .Formant output files, while
 % Wavesurfer has .FRM output files:
-% runSynth('PRAAT',105, 15, 10000, 4, [], 0, '../data/synthData/ln.roy.10k.Formant');
-% runSynth('PRAAT',105, 15, 10000, 4, [], 0,  '../data/synthData/mlm.tea.10k.Formant');
-% runSynth('WS', 15, 15, 10000, 4, 1, [], '../data/synthData/ln.roy.10k.FRM');
-% runSynth('WS', 20, 15, 10000, 4, 0, [], '../data/synthData/mlm.tea.10k.FRM');
+% runSynth('PRAAT',105, 15, 10000, 4, [], 0, 1, '../data/synthData/ln.roy.10k.Formant');
+% runSynth('PRAAT',105, 15, 10000, 4, [], 0, 1, '../data/synthData/mlm.tea.10k.Formant');
+% runSynth('WS', 15, 15, 10000, 4, 1, [], 1, '../data/synthData/ln.roy.10k.FRM');
+% runSynth('WS', 20, 15, 10000, 4, 0, [], 1, '../data/synthData/mlm.tea.10k.FRM');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %close all;
@@ -42,7 +44,7 @@ switch testMethod
 
     case 'Synth'
         if(length(varargin) ~= 2)
-            error('Please provide number formants, number observations and the variance of the process noise');
+            error('Please provide number observations and the variance of the process noise');
         else
             numObs      = varargin{1}; % Number of observations to generate
             pNoiseVar   = varargin{2}; % Variance of the process noise
@@ -50,7 +52,7 @@ switch testMethod
 
     case {'VTR'}
         if(length(varargin) ~= 2)
-            error('Check parameter usage');
+            error('Check parameter usage: data filename and sample index');
         else
             dataFileName = varargin{1};
             sampleIndex  = varargin{2};
@@ -58,7 +60,7 @@ switch testMethod
 
     case{'PRAAT', 'WS'}
         if(length(varargin) ~= 1)
-            error('Must provide fileName from which to read formant tracks');
+            error('Must provide filename from which to read formant tracks');
         else
             dataFileName = varargin{1};
         end
@@ -69,7 +71,7 @@ end
 
 addpath(genpath('../')); % Set paths
 rand('state', 1); randn('state',1); % Set seeds
-doPlots = 1;
+% doPlots = 1;
 
 % Generate data according to the model
 switch testMethod
@@ -77,6 +79,7 @@ switch testMethod
         display('Generating formant data');
         % Number of observations
         initState = 500 + 1000*(0:(numFormants - 1))'; % Note: matched to track init
+        %initState = [500 1500 2500 3500];
         initBW    = 80 + 40*(0:(numFormants - 1));     % Note: matched to track init
 
         % Generate Data

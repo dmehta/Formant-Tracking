@@ -4,15 +4,15 @@ function [] = runSynthZ(nP, nZ, N, pNoiseVar, snr_dB, cepOrder, fs)
 % Author: Daniel Rudoy
 % Created:  12/13/2007
 % Modified: 12/13/2007, 02/15/2010, 03/21/2010
-
+% 
 % INPUT
 %
-% nP  : Number of poles to track
-% nZ  : Number of zeros to track
+% nP  : Number of pole pairs to track
+% nZ  : Number of zero pairs to track
 % N    : Number of observations to generate
 % pNoiseVar : Process noise variance
 % snr_dB    : How much observation noise to add
-% cep_order : How many cepstal coefficients to include in the observations
+% cepOrder : How many cepstal coefficients to include in the observations
 % fs        : Sampling rate at which the observations are made (fake here)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,7 +81,7 @@ relRmse = zeros(nP + nZ, sum(algFlag));
 % Run Extended Kalman Filter
 if algFlag(EKF)
     smooth = 0;
-    [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, F, Q, R, x0, formantInds, fs, bwStates, nP,0);
+    [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, F, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
 
     %Track estimate into data cube for plot routines
     estTracks(:,:,countTrack) = x_estEKF;
