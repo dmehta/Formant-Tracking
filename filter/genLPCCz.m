@@ -53,4 +53,7 @@ for i=1:numFrames
 end
 
 % Convert ARMA coefficients to cepstral coefficients
-C = lpc2cz(-allCoeffsP(:,2:end)',-allCoeffsZ(:,2:end)',cepOrder);
+C1 = lpc2c(-allCoeffsP(:,2:end)',cepOrder);
+C2 = lpc2c(-allCoeffsZ(:,2:end)',cepOrder);
+
+C = C1 - C2;
