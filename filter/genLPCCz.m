@@ -8,7 +8,7 @@ function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder)
 %   win - Window to use
 %   wOverlap - In percent, how much to overlap (determines frame shift)
 %   peCoeff  - Pre-emphasis coeffient
-%   lpcOrder - Number of LPC Coefficients to use
+%   lpcOrder - Number of AR Coefficients to use
 %   zOrder - Number of MA Coefficients to use (two times anti-resonances)
 %   cepOrder - Number of Cepstral Coefficients to use
 %
@@ -53,7 +53,16 @@ for i=1:numFrames
 end
 
 % Convert ARMA coefficients to cepstral coefficients
-C1 = lpc2c(-allCoeffsP(:,2:end)',cepOrder);
-C2 = lpc2c(-allCoeffsZ(:,2:end)',cepOrder);
+if size(allCoeffsP, 2) == 1 % no AR coefficients estimated
+    C1 = 0;
+else
+    C1 = lpc2c(-allCoeffsP(:,2:end)',cepOrder);    
+end
+
+if size(allCoeffsZ, 2) == 1 % no MA coefficients estimated
+    C2 = 0;
+else
+    C2 = lpc2c(-allCoeffsZ(:,2:end)',cepOrder);
+end
 
 C = C1 - C2;

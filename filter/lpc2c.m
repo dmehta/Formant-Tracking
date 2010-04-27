@@ -11,7 +11,7 @@ function [C] = lpc2c(arCoeffs, cepOrder)
 
 % Author: Daniel Rudoy
 % Created:  3/18/2007
-% Modified: 2/15/2010
+% Modified: 4/26/2010
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

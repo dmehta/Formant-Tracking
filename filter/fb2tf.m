@@ -57,3 +57,6 @@ if ~isempty(Z)
         D = D*a(i);
     end
 end
+
+N = N/N(1);
+D = D/D(1);
