@@ -8,14 +8,14 @@ cepOrder = 15;
 
 %% set center frequencies and bandwidths
 % F = []; Fbw = [];
-% F = [500 1500 2500 3500]; Fbw = 80+40*[0:3];
+F = [500 1500 2500 3500]; Fbw = 80+40*[0:3];
 % F = [900 1500]; Fbw = 80+40*[0:1];
-F = 500; Fbw = 100;
+% F = 500; Fbw = 100;
 F=F'; Fbw = Fbw';
 
 % Z = []; Zbw = [];
-Z = 2000; Zbw = 80;
-% Z = [500 1500 2500 3500]+100; Zbw = 80+40*[0:3];
+% Z = 2000; Zbw = 80;
+Z = [500 1500 2500 3500]+100; Zbw = 80+40*[0:3];
 Z=Z'; Zbw = Zbw';
 
 %% route 1 vs route 2
@@ -30,7 +30,7 @@ Z=Z'; Zbw = Zbw';
 % sum(C-C2')
 
 %% Create an ARMA model by filtering a white noise sequence
-dur = 0.25; % in s
+dur = 1; % in s
 N = round(dur*fs);
 [num, denom] = fb2tf(F, Fbw, Z, Zbw, fs);
 x = filter(num, denom, randn(N,1));
@@ -83,13 +83,12 @@ disp(['MA Coeffs:' num2str(num)])
 disp('Covariance Method: Estimated AR Coefficients')
 disp(['AR Coeffs:' num2str(arCoeffs)])
 [spec, freq] = freqz(1, arCoeffs, 512, fs);
-figure, subplot(211)
+figure, subplot(211), hold on
 plot(freq, 20*log10(abs(spec)), 'b')
 [spec, freq] = freqz(1, denom, 512, fs);
-hold on, subplot(211)
 plot(freq, 20*log10(abs(spec)), 'r')
 title('AR estimate spectrum (ARCOV)')
-legend('Estimate', 'True')
+legend('Estimate', 'True AR')
 
 %% Estimate ARMA parameters using armax function from Sys. ID. toolbox
 data = iddata(x,[],1); % Package input
@@ -100,30 +99,29 @@ disp('Sys ID toolbox ARMA estimates');
 disp(['AR Coeffs: ' num2str(m.a)]); % Estimated AR Coefficients
 disp(['MA Coeffs: ' num2str(m.c)]); % Estimated MA Coefficients
 
+figure
+
+subplot(311), hold on
 [spec, freq] = freqz(1, m.a, 512, fs);
-figure, subplot(211)
 plot(freq, 20*log10(abs(spec)), 'b')
 [spec, freq] = freqz(1, denom, 512, fs);
-hold on, subplot(211)
-plot(freq, 20*log10(abs(spec)), 'r')
+plot(freq, 20*log10(abs(spec)), 'r:')
 title('AR estimate spectrum (ARMA)')
 legend('Estimate', 'True')
 
-[spec, freq] = freqz(1, m.a, 512, fs);
-figure, subplot(211)
+subplot(312), hold on
+[spec, freq] = freqz(m.c, 1, 512, fs);
 plot(freq, 20*log10(abs(spec)), 'b')
-[spec, freq] = freqz(1, denom, 512, fs);
-hold on, subplot(211)
-plot(freq, 20*log10(abs(spec)), 'r')
-title('AR estimate spectrum (ARMA)')
+[spec, freq] = freqz(num, 1, 512, fs);
+plot(freq, 20*log10(abs(spec)), 'r:')
+title('MA estimate spectrum (ARMA)')
 legend('Estimate', 'True')
 
+subplot(313), hold on
 [spec, freq] = freqz(m.c, m.a, 512, fs);
-figure, subplot(211)
 plot(freq, 20*log10(abs(spec)), 'b')
 [spec, freq] = freqz(num, denom, 512, fs);
-hold on, subplot(211)
-plot(freq, 20*log10(abs(spec)), 'r')
+plot(freq, 20*log10(abs(spec)), 'r:')
 title('ARMA estimate spectrum (ARMA)')
 legend('Estimate', 'True')
 
@@ -141,7 +139,7 @@ win = feval(wType,wLength);
 
 y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
 
-%% Do a plot of the observations
+%% Do a plot of the LPCCC observations
 % figure;
 % imagesc(log(abs(y))); colorbar;
 % title('Cepstral Coefficients');
@@ -158,12 +156,12 @@ nZ = length(Z);
 
 Fmatrix = eye(nP + nZ);   % Process Matrix F
 
-qFormantVar = 100;
+qFormantVar = 4;
 Q = diag(ones(nP+nZ,1)*qFormantVar);
 
 SNR = 25; % dB, can't be too high
 [y, oNoiseVar] = addONoise(y, SNR);
-R = oNoiseVar*eye(cepOrder);       % Measurement noise covariance matrix R
+R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
 bwFlag = 1; % 0 - Use loaded bandwidths, 1 - Average bandwidths
 bwStates = repmat([Fbw; Zbw], 1, size(y,2));
@@ -177,7 +175,7 @@ EKF = 1; EKS = 2;
 
 % Initial state of formant trackers
 % x0 = trueState(:,1);
-x0 = [F; Z]+500;
+x0 = [F; Z]+200;
 
 countTrack = 1; % Counter for storing results
 % Initialize root-mean-square error matrices:
@@ -198,7 +196,9 @@ if algFlag(EKF)
     titleCell(2,countTrack+1) = {'g-.'};
 
     countTrack = countTrack + 1;     % Increment counter
-    figure, plot(x_estEKF(1,:))
+    figure, plot(x_estEKF')
+    xlabel('Frame number')
+    ylabel('Center frequency (Hz)')
     title('EKF')
 end
 
@@ -214,14 +214,15 @@ if algFlag(EKS)
     titleCell(2,countTrack+1) = {'b:'};
 
     figure, plot(x_estEKS')
+    xlabel('Frame number')
+    ylabel('Center frequency (Hz)')
     title('EKS')
 end
 
 %% Initial Plotting Variables
-break
-titleCell(1,1)  = {'True State'};   % Keeps track of trackers used for plotter
-titleCell(2,1)  = {'r'};            % Color for true state plot
-
-% A basic plotting routine to visualize results
-plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
-plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);
+% titleCell(1,1)  = {'True State'};   % Keeps track of trackers used for plotter
+% titleCell(2,1)  = {'r'};            % Color for true state plot
+% 
+% % A basic plotting routine to visualize results
+% plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
+% plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);
