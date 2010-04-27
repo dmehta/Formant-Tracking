@@ -17,13 +17,21 @@ function C = lpc2cz(arCoeffs, maCoeffs, cepOrder)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[p, N] = size(arCoeffs); % Get LPC coeffs size
-[q, N] = size(maCoeffs); % Get LPC coeffs size
+[p, Np] = size(arCoeffs); % Get LPC coeffs size
+[q, Nz] = size(maCoeffs); % Get LPC coeffs size
 
-C = zeros(cepOrder, N);   % Initialize LPCC matrix
+C = zeros(cepOrder, max(Np, Nz));   % Initialize LPCC matrix
+C1 = C; C2 = C;
 
 % Compute cepstrum for every frame
-for i = 1:N
-    C(:,i) = ar2cp(arCoeffs(:,i),cepOrder);
-    C(:,i) = C(:,i) - ar2cp(maCoeffs(:,i),cepOrder); % update to include zeros
+for i = 1:max(Np, Nz)
+    if p ~= 0 % if AR coefficients input
+        C1(:,i) = ar2cp(arCoeffs(:,i),cepOrder);
+    end
+    
+    if q ~= 0 % if MA coefficients input
+        C2(:,i) = ar2cp(maCoeffs(:,i),cepOrder);
+    end
+        
+    C(:,i) = C1(:,i) - C2(:,i);
 end
