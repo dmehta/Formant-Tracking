@@ -1,4 +1,4 @@
-function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder)
+function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num, denom)
 
 % Function generates LPC cepstral coefficients from waveform data,
 % estimating poles and zeros
@@ -50,6 +50,10 @@ for i=1:numFrames
     
     allCoeffsP(i,:) = m.a;
     allCoeffsZ(i,:) = m.c;
+    
+    % to put in truth
+    %allCoeffsP(i,:) = denom;
+    %allCoeffsZ(i,:) = num;    
 end
 
 % Convert ARMA coefficients to cepstral coefficients
