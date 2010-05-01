@@ -1,4 +1,4 @@
-function rmse_mean = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, plot_flag, algFlag, x0)
+function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, plot_flag, algFlag, x0)
 
 % Track poles and zeros (no bandwidths) on synthetic data
 % Based on runSynthZ(), which was model-based. This function is
@@ -23,7 +23,11 @@ function rmse_mean = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 %    x0:        initial state of formant trackers [F;Z], in Hz
 % 
 % OUTPUT:
-%    rmse_mean: average RMSE across all tracks
+%    Depends on algFlag. For each algorithm, two outputs generated--
+%    rmse_mean1: average RMSE across all tracks
+%    x_est1:  estimated tracks
+%    So that if two algorithms run, the following are output:
+%    [rmse_mean1, x_est1, rmse_mean2, x_est2]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
@@ -83,22 +87,24 @@ if plot_flag
     legend('Transfer function', 'Periodogram')
 
     %%
-    % Estimate AR params using arcov (this leads to a biased estimate)
-    [arCoeffs e] = arcov(x,length(F)*2);
-    disp(' ')
-    disp('True Coefficients');
-    disp(['AR Coeffs:' num2str(denom)])
-    disp(['MA Coeffs:' num2str(num)])
-    disp('Covariance Method: Estimated AR Coefficients')
-    disp(['AR Coeffs:' num2str(arCoeffs)])
-    [spec, freq] = freqz(1, arCoeffs, 512, fs);
-    figure, subplot(211), hold on
-    plot(freq, 20*log10(abs(spec)), 'b')
-    [spec, freq] = freqz(1, denom, 512, fs);
-    plot(freq, 20*log10(abs(spec)), 'r')
-    title('AR estimate spectrum (ARCOV)')
-    legend('Estimate', 'True AR')
-
+    if ~isempty(F)
+        % Estimate AR params using arcov (this leads to a biased estimate)
+        [arCoeffs e] = arcov(x,length(F)*2);
+        disp(' ')
+        disp('True Coefficients');
+        disp(['AR Coeffs:' num2str(denom)])
+        disp(['MA Coeffs:' num2str(num)])
+        disp('Covariance Method: Estimated AR Coefficients')
+        disp(['AR Coeffs:' num2str(arCoeffs)])
+        [spec, freq] = freqz(1, arCoeffs, 512, fs);
+        figure, subplot(211), hold on
+        plot(freq, 20*log10(abs(spec)), 'b')
+        [spec, freq] = freqz(1, denom, 512, fs);
+        plot(freq, 20*log10(abs(spec)), 'r')
+        title('AR estimate spectrum (ARCOV)')
+        legend('Estimate', 'True AR')
+    end
+    
     %% Estimate ARMA parameters using armax function from Sys. ID. toolbox
     data = iddata(x,[],1); % Package input
     m = armax(data,[length(F)*2 length(Z)*2]); % Call estimator with desired model orders
@@ -182,6 +188,8 @@ bwStates = repmat([Fbw; Zbw], 1, size(y,2));
 formantInds = ones(N,nP + nZ);
 
 countTrack = 1; % Counter for storing results
+countOut = 1; % Counter for output variables
+
 % Initialize root-mean-square error matrices:
 rmse    = zeros(nP + nZ, sum(algFlag));
 relRmse = zeros(nP + nZ, sum(algFlag));
@@ -208,6 +216,8 @@ if algFlag(EKF)
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
+    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
+    varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
     %display(['Average EKF RMSE: ' num2str(rmse_mean)]);    
     countTrack = countTrack + 1;     % Increment counter
 end
@@ -231,6 +241,8 @@ if algFlag(EKS)
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
+    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
+    varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
     %display(['Average EKS RMSE: ' num2str(rmse_mean)]);
     countTrack = countTrack + 1;     % Increment counter
 end

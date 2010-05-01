@@ -32,15 +32,15 @@ ylabel('Average RMSE')
 title('Two resonances')
 
 %% parameters
-F = []; Fbw = [];
-Z1 = 500; Z2vect = 2000:-10:500;
+F = 1000; Fbw = 100;
+Z1 = 500; Z2vect = 2000%:-10:500;
 Zbw = [100 100]';
 dur = .5; % in s
 pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 15;
 fs = 16e3;
-plot_flag = 0;
+plot_flag = 1;
 algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
 
 rmse = zeros(1, length(Z2vect));
