@@ -21,26 +21,35 @@ C(1) = arCoeffs(1);    % Initial case in recursion
 % end
 
 % Dan corrected 4/26/10
-for j = 2:p
-   
-    tmp = arCoeffs(j);
-    for i = 1:j-1
-        curA = arCoeffs(j-i);
-        tmp = tmp + i*curA*C(i)/j;
+
+if cepOrder > 1
+    if cepOrder < p
+        jmax = cepOrder;
+    else
+        jmax = p;
     end
-    C(j) = tmp;
-end
+    
+    for j = 2:jmax
 
-
-for j = p+1:cepOrder
-   
-    tmp = 0;
-    for i = j-p:j-1
-        curA = arCoeffs(j-i);
-        tmp = tmp + i*curA*C(i)/j;
+        tmp = arCoeffs(j);
+        for i = 1:j-1
+            curA = arCoeffs(j-i);
+            tmp = tmp + i*curA*C(i)/j;
+        end
+        C(j) = tmp;
     end
-    C(j) = tmp;
-end
 
+    if cepOrder > p
+        for j = p+1:cepOrder
+
+            tmp = 0;
+            for i = j-p:j-1
+                curA = arCoeffs(j-i);
+                tmp = tmp + i*curA*C(i)/j;
+            end
+            C(j) = tmp;
+        end
+    end
+end
 
 cepCoeffs = C; % Set output
