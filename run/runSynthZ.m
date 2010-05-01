@@ -127,4 +127,4 @@ titleCell(2,1)  = {'r'};            % Color for true state plot
 
 % A basic plotting routine to visualize results
 plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
-plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);
+% plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);

@@ -1,7 +1,7 @@
 function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num, denom)
 
 % Function generates LPC cepstral coefficients from waveform data,
-% estimating poles and zeros
+% estimating poles and zeros.
 % 
 % INPUT
 %   wav - Waveform
@@ -11,13 +11,17 @@ function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, n
 %   lpcOrder - Number of AR Coefficients to use
 %   zOrder - Number of MA Coefficients to use (two times anti-resonances)
 %   cepOrder - Number of Cepstral Coefficients to use
+%   num - True coefficients of transfer function numerator (including
+%               zeroth coefficient); do not include if not desired
+%   denom - True coefficients of transfer function denominator (including
+%               zeroth coefficient); do not include if not desired
 %
 % OUTPUT
 %   C - LPCC coeffients (observations)
 %
 % Author: Daryush
 % Created:  4/23/10
-% Modified: 4/23/10
+% Modified: 4/30/10 (handle zeros for lpcOrder and zOrder, and truth input)
 
 % Pre-emphasize using a first order difference (1-zero filter)
 wav = filter([1 -peCoeff],1,wav);
@@ -44,16 +48,22 @@ for i=1:numFrames
     % Pull out current segment and multiply it by window
     curSegment = wav(wLeft(i):wRight(i));
     
-    % Estimate ARMA parameters using armax function from Sys. ID. toolbox
-    data = iddata(win.*curSegment,[],1); % Package input
-    m = armax(data,[lpcOrder zOrder]); % Call estimator with desired model orders
-    
-    allCoeffsP(i,:) = m.a;
-    allCoeffsZ(i,:) = m.c;
-    
-    % to put in truth
-    %allCoeffsP(i,:) = denom;
-    %allCoeffsZ(i,:) = num;    
+    if exist('num', 'var') && exist('denom', 'var') % ground truth was input
+        allCoeffsP(i,:) = denom;
+        allCoeffsZ(i,:) = num;
+    else
+        if zOrder
+            % Estimate ARMA parameters using armax function from Sys. ID. toolbox
+            data = iddata(win.*curSegment,[],1); % Package input
+            m = armax(data,[lpcOrder zOrder]); % Call estimator with desired model orders
+
+            allCoeffsP(i,:) = m.a;
+            allCoeffsZ(i,:) = m.c;
+        else
+            allCoeffsP(i,:) = arcov(win.*curSegment, lpcOrder);
+            allCoeffsZ(i,:) = 1;
+        end
+    end
 end
 
 % Convert ARMA coefficients to cepstral coefficients
