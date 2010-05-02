@@ -6,7 +6,7 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % 
 % Author: Daryush Mehta
 % Created:  04/30/2010
-% Modified: 04/30/2010
+% Modified: 05/01/2010 variable output number
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (col vector), in Hz

@@ -31,8 +31,8 @@ for ff = 1:numForms
         plot(estTracks(ff,:,tt), char(titleCell(2,tt+1)));
     end
     title(['Resonance ' int2str(ff)]);
-    legend(S{1},S{2});
-    if ff==(n*(m-1)+1)
+    if ff==1
+        legend(S{1},S{2});
         xlabel('Time Block');
         ylabel('Frequency (Hz)');
     end
