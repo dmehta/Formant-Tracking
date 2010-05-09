@@ -21,6 +21,7 @@ S = titleCell(1,ii);
 % Assumes tracking all four formants
 m = ceil(sqrt(numForms));
 n = ceil(numForms/m);
+yrangemax = 0;
 figure; clf,
 for ff = 1:numForms
     subplot(m,n,ff)
@@ -30,10 +31,18 @@ for ff = 1:numForms
     for tt = 1:numEst
         plot(estTracks(ff,:,tt), char(titleCell(2,tt+1)));
     end
+    yrange = get(gca, 'YLim');
+    yrangemax = max(yrangemax, yrange(2)-yrange(1));
     title(['Resonance ' int2str(ff)]);
     if ff==1
         legend(S{1},S{2});
         xlabel('Time Block');
         ylabel('Frequency (Hz)');
     end
+end
+
+for ff = 1:numForms
+    subplot(m,n,ff)
+    yrange = get(gca, 'YLim');
+    set(gca, 'YLim', [yrange(1) yrange(1)+yrangemax])
 end
