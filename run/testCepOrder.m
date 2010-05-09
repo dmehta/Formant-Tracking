@@ -9,25 +9,37 @@ Z = [700 1300]'; Zbw = [50 50]';
 dur = .5; % in s
 pNoiseVar = 10;
 snr_dB = 25;
-cepOrder_vect = 50:-1:8;
+cepOrder_vect = 25:-1:23;
 fs = 16e3;
 plot_flag = 0;
 algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
 x0 = [F; Z]+100;
 
-rmse = zeros(1, length(cepOrder_vect));
+numTrials = 10;
+rmse = zeros(numTrials, length(cepOrder_vect));
 
 % loop through
 for ii = 1:length(cepOrder_vect)
-    cepOrder = cepOrder_vect(ii);
-    tic
-    rmse(ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-        cepOrder, fs, plot_flag, algFlag, x0);
-    toc
+    for jj = 1:numTrials
+        cepOrder = cepOrder_vect(ii);
+        rmse(jj, ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
+            cepOrder, fs, plot_flag, algFlag, x0);
+    end
 end
 
-% plot RMSE vs frequency spacing
-figure
-plot(cepOrder_vect, rmse, 'b')
+% plot RMSE vs cepstral order
+xdata = cepOrder_vect;
+ydata = mean(rmse, 1);
+yerror = std(rmse, 0, 1);
+
+ydata_upper = ydata + yerror;
+ydata_lower = ydata - yerror;
+
+figure, fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+hold on, plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
+box off
+
 xlabel('# cepstral coefficents')
-ylabel('Average RMSE')
+ylabel('Average RMSE (Hz)')
+
+% save('../testCepOrder_results/cepOrder_8-50.mat')

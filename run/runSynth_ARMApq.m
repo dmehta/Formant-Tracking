@@ -39,8 +39,8 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % formants that are available.
 
 addpath(genpath('../')); % Paths
-% rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
-rand('state', 2); randn('state', 44);
+rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 2); randn('state', 44);
 
 %% Create an ARMA model by filtering a white noise sequence
 N = round(dur*fs);
@@ -111,8 +111,8 @@ if plot_flag
     m.a = denom;
     m.c = num;
     disp('Sys ID toolbox ARMA estimates');
-    disp(['AR Coeffs: ' num2str(m.a)]); % Estimated AR Coefficients
-    disp(['MA Coeffs: ' num2str(m.c)]); % Estimated MA Coefficients
+    disp(['AR Coeffs:' num2str(m.a)]); % Estimated AR Coefficients
+    disp(['MA Coeffs:' num2str(m.c)]); % Estimated MA Coefficients
 
     figure
 
