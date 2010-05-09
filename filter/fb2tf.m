@@ -11,8 +11,8 @@ function [N, D] = fb2tf(F, Fbw, Z, Zbw, fs)
 %    fs:    sampling rate, in Hz
 % 
 % OUTPUT:
-%    N:     coefficients of transfer function numerator, Matlab format
-%    D:     coefficients of transfer function denominator, Matlab format
+%    N:     coefficients of transfer function numerator, N(1) forced to 1
+%    D:     coefficients of transfer function denominator, D(1) forced to 1
 % 
 % Reference: 
 % Klatt, Dennis (1980). Software for a cascade/parallel formant synthesizer, JASA, Vol. 67, No.

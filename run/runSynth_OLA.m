@@ -104,7 +104,8 @@ wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
 
-y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num_all, denom_all);
+% y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num_all, denom_all);
+y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -120,14 +121,19 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
+trueState = [Fcontour'; Zcontour'];
+
 nP = size(Fcontour, 2);
 nZ = size(Zcontour, 2);
 numObs = size(y,2);
 
 Fmatrix = eye(nP + nZ);   % Process Matrix F
 
-pNoiseVar = cov(x(2:end)-x(1:end-1));
-Q = diag(ones(nP+nZ,1)*pNoiseVar);
+pNoiseVar = zeros(1, size(trueState,1));
+for ii = 1:length(pNoiseVar)
+    pNoiseVar(ii) = cov(trueState(ii, 2:end)-trueState(ii, 1:end-1));
+end
+Q = diag(pNoiseVar+eps);
 
 [y, oNoiseVar] = addONoise(y, snr_dB);
 R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
@@ -146,8 +152,6 @@ rmse    = zeros(nP + nZ, sum(algFlag));
 relRmse = zeros(nP + nZ, sum(algFlag));
 
 EKF = 1; EKS = 2;
-% trueState = repmat([F; Z], 1, size(y,2));
-trueState = [Fcontour'; Zcontour'];
 
 %% Run Extended Kalman Filter
 if algFlag(EKF)
@@ -201,7 +205,7 @@ end
 
 if plot_flag
     %% Initial Plotting Variables
-    titleCell(1,1)  = {'True State'};   % Keeps track of trackers used for plotter
+    titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter
     titleCell(2,1)  = {'r'};            % Color for true state plot
 
     % A basic plotting routine to visualize results

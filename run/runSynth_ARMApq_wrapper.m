@@ -30,7 +30,7 @@ cepOrder = 15;
 fs = 16e3;
 plot_flag = 1;
 algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
-x0 = [F; Z]+100;
+x0 = [F; Z]+0;
 
 [rmse_EKS, x_estEKS] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
         cepOrder, fs, plot_flag, algFlag, x0);
@@ -68,18 +68,18 @@ title('Estimated EKS trajectories')
 rmse_EKS
 
 %% parameters
-F = [500 1500 2500]';
-Fbw = [100 100 100]';
-Z = [700]'; Zbw = [58]';
+F = [500 1000 1600]';
+Fbw = [100 80 100]';
+Z = [750]'; Zbw = [20]';
 
 dur = .5; % in s
-pNoiseVar = 600;
+pNoiseVar = 400;
 snr_dB = 25;
-cepOrder = 25;
-fs = 16e3;
-plot_flag = 0;
+cepOrder = 15;
+fs = 10e3;
+plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
-x0 = [F; Z]+100;
+x0 = [F; Z]+0;
 
 [rmse, x_est] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
         cepOrder, fs, plot_flag, algFlag, x0);

@@ -18,7 +18,7 @@ function C = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, n
 %
 % OUTPUT
 %   C - LPCC coeffients (observations)
-%
+
 % Author: Daryush
 % Created:  4/23/10
 % Modified: 4/30/10 (handle zeros for lpcOrder and zOrder, and truth input)
@@ -49,8 +49,13 @@ for i=1:numFrames
     curSegment = wav(wLeft(i):wRight(i));
     
     if exist('num', 'var') && exist('denom', 'var') % ground truth was input
-        allCoeffsP(i,:) = denom{i};
-        allCoeffsZ(i,:) = num{i};
+        if iscell(num) && iscell(denom) % frame-by-frame given
+            allCoeffsP(i,:) = denom{i};
+            allCoeffsZ(i,:) = num{i};
+        else % one set of coefficients input
+            allCoeffsP(i,:) = denom;
+            allCoeffsZ(i,:) = num;
+        end            
     else
         if zOrder
             % Estimate ARMA parameters using armax function from Sys. ID. toolbox
@@ -62,6 +67,8 @@ for i=1:numFrames
         else
             allCoeffsP(i,:) = arcov(win.*curSegment, lpcOrder);
             allCoeffsZ(i,:) = 1;
+            %[allCoeffsP(i,:) allCoeffsZ(i,:)] = arcov(win.*curSegment, lpcOrder);
+            %allCoeffsP(i,:) = lpc(win.*curSegment, lpcOrder);
         end
     end
 end

@@ -23,8 +23,8 @@
 %% parameters
 dur = .5; % in s
 snr_dB = 25;
-cepOrder = 25;
-fs = 16e3;
+cepOrder = 15;
+fs = 10e3;
 plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 wType = 'hanning';  % window type
@@ -45,31 +45,31 @@ numFrames = floor(N/((1-wOverlap)*wLength))-1;
 % Fbw = [100 100 100]';
 % 
 % Zbeg = [4000]';
-% Zend = [4000]';
+% Zend = [4200]';
 % Zcontour = interp1( [1 numFrames]', [Zbeg, Zend]', 1:numFrames )'; % if one anti-formant, need to take transpose here
 % Zbw = [100]';
 
 % Zcontour = []'; Zbw = []';
 
 %% sinewave modulated trajectory
-Fbeg = [500]';
-Fbw = [100]';
-Fpert = 50*repmat(cos(2*pi*4*[1:numFrames]/numFrames*dur)', 1, size(Fbeg, 1));
-Fcontour = interp1( [1 numFrames]', [Fbeg Fbeg]', 1:numFrames )';
+Fbeg = [500 1500 2500]';
+Fbw = [100 100 100]';
+Fpert = 75*repmat(cos(2*pi*4*[1:numFrames]/numFrames*dur)', 1, size(Fbeg, 1));
+Fcontour = interp1( [1 numFrames]', [Fbeg Fbeg]', 1:numFrames );
 Fcontour = Fcontour + Fpert;
 
 Zbeg = [800]';
 Zbw = [100]';
-Zpert = 0*repmat(cos(2*pi*4*[1:numFrames]/numFrames*dur)', 1, size(Zbeg, 1));
+Zpert = 100*repmat(cos(2*pi*4*[1:numFrames]/numFrames*dur)', 1, size(Zbeg, 1));
 Zcontour = interp1( [1 numFrames]', [Zbeg Zbeg]', 1:numFrames );
 Zcontour = Zcontour' + Zpert;
 
 % Fcontour = []'; Fbw = []';
-Zcontour = []'; Zbw = []';
+% Zcontour = []'; Zbw = []';
 
 %% initial state
 if ~isempty(Fcontour) && ~isempty(Zcontour)
-    x0 = [Fcontour(1, :)'; Zcontour(1, :)']+0;
+    x0 = [Fcontour(1, :)'; Zcontour(1, :)']+100;
 end
 
 if ~isempty(Fcontour) && isempty(Zcontour)

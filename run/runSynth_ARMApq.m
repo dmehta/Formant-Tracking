@@ -84,7 +84,7 @@ if plot_flag
     plot(freq, spec_tf, 'r')
     xlabel('Frequency (Hz)')
     ylabel('Power (dB)')
-    legend('Transfer function', 'Periodogram')
+    legend('Periodogram', 'Transfer function')
 
     %%
     if ~isempty(F)
@@ -96,11 +96,11 @@ if plot_flag
         disp(['MA Coeffs:' num2str(num)])
         disp('Covariance Method: Estimated AR Coefficients')
         disp(['AR Coeffs:' num2str(arCoeffs)])
-        [spec, freq] = freqz(1, arCoeffs, 512, fs);
-        figure, subplot(211), hold on
+        [spec, freq] = freqz(sqrt(e), arCoeffs, 512, fs);
+        figure, subplot(311), hold on
         plot(freq, 20*log10(abs(spec)), 'b')
         [spec, freq] = freqz(1, denom, 512, fs);
-        plot(freq, 20*log10(abs(spec)), 'r')
+        plot(freq, 20*log10(abs(spec)), 'r:')
         title('AR estimate spectrum (ARCOV)')
         legend('Estimate', 'True AR')
     end
@@ -108,8 +108,6 @@ if plot_flag
     %% Estimate ARMA parameters using armax function from Sys. ID. toolbox
     data = iddata(x,[],1); % Package input
     m = armax(data,[length(F)*2 length(Z)*2]); % Call estimator with desired model orders
-    m.a = denom;
-    m.c = num;
     disp('Sys ID toolbox ARMA estimates');
     disp(['AR Coeffs:' num2str(m.a)]); % Estimated AR Coefficients
     disp(['MA Coeffs:' num2str(m.c)]); % Estimated MA Coefficients

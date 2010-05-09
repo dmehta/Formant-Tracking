@@ -1,9 +1,9 @@
 %
 %
-% Author: Patrick J. Wolfe, Daniel Rudoy
+% Author: Patrick J. Wolfe, Daniel Rudoy, Daryush Mehta
 %
 % Created: 03/13/2007 
-% Modified: 12/13/2007
+% Modified: 05/09/2010
 
 function plotStateTracksFZ(trueState,estTracks,titleCell,nP)
 % Plot estimated formant tracks for poles/zeros vs. ground truth
@@ -26,7 +26,8 @@ figure; clf,
 for ff = 1:numForms
     subplot(m,n,ff)
     plot(trueState(ff,:), char(titleCell(2,1)));
-    grid on;
+    %grid on;
+    box off
     hold on;
     for tt = 1:numEst
         plot(estTracks(ff,:,tt), char(titleCell(2,tt+1)));
