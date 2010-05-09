@@ -33,7 +33,13 @@ for ff = 1:numForms
     end
     yrange = get(gca, 'YLim');
     yrangemax = max(yrangemax, yrange(2)-yrange(1));
-    title(['Resonance ' int2str(ff)]);
+    
+    if ff > nP
+        title(['Anti-resonance ' int2str(ff-nP)]);
+    else
+        title(['Resonance ' int2str(ff)]);
+    end
+    
     if ff==1
         legend(S{1},S{2});
         xlabel('Time Block');

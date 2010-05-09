@@ -24,15 +24,15 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % 
 % OUTPUT:
 %    Depends on algFlag. For each algorithm, two outputs generated--
-%    rmse_mean1: average RMSE across all tracks
-%    x_est1:  estimated tracks
-%    So that if two algorithms run, the following are output:
-%    [rmse_mean1, x_est1, rmse_mean2, x_est2]
+%       rmse_mean1: average RMSE across all tracks
+%        x_est1:  estimated tracks
+%       So that if two algorithms run, the following are output:
+%       [rmse_mean1, x_est1, rmse_mean2, x_est2]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
 % Synthetic Examples:
-%   rmse_mean = runSynthARMApq([500; 1000],[100; 100],[],[],.5,200,25,15,16000,1,[1 0],[600; 1600]);
+%   rmse_mean = runSynth_ARMApq([500; 1000],[100; 100],[],[],.5,200,25,15,16000,1,[1 0],[600; 1600]);
 %
 % The usual examples from PRAAT and Wavesurfer are not included, because
 % it is not clear how to generate paths of zeros along with the paths of
@@ -173,6 +173,7 @@ end
 % H is obtained in the EKF via linearization about the state
 nP = length(F);
 nZ = length(Z);
+numObs = size(y, 2);
 
 Fmatrix = eye(nP + nZ);   % Process Matrix F
 
@@ -210,8 +211,8 @@ if algFlag(EKF)
 
     % Compute and Display MSE and RMSE
     for j = 1:nP+nZ
-        rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(N);
-        relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(N);
+        rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
+        relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
 
     % Display output summary and timing information
@@ -235,8 +236,8 @@ if algFlag(EKS)
 
     % Compute and Display MSE and RMSE
     for j = 1:nP+nZ
-        rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(N);
-        relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(N);
+        rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
+        relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
 
     % Display output summary and timing information

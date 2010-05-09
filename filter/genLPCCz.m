@@ -49,8 +49,8 @@ for i=1:numFrames
     curSegment = wav(wLeft(i):wRight(i));
     
     if exist('num', 'var') && exist('denom', 'var') % ground truth was input
-        allCoeffsP(i,:) = denom;
-        allCoeffsZ(i,:) = num;
+        allCoeffsP(i,:) = denom{i};
+        allCoeffsZ(i,:) = num{i};
     else
         if zOrder
             % Estimate ARMA parameters using armax function from Sys. ID. toolbox
