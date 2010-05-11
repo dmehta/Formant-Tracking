@@ -39,8 +39,8 @@ function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOr
 % formants that are available.
 
 addpath(genpath('../')); % Paths
-% rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
-rand('state', 2); randn('state', 44);
+rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 2); randn('state', 44);
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SYNTHESIS

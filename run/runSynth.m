@@ -70,7 +70,8 @@ switch testMethod
 end
 
 addpath(genpath('../')); % Set paths
-rand('state', 1); randn('state',1); % Set seeds
+rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 1); randn('state',1); % Set seeds
 % doPlots = 1;
 
 % Generate data according to the model

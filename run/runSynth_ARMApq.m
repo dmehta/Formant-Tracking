@@ -41,8 +41,8 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % formants that are available.
 
 addpath(genpath('../')); % Paths
-% rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
-rand('state', 2); randn('state', 44);
+rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 2); randn('state', 44);
 
 %% Create an ARMA model by filtering a white noise sequence
 N = round(dur*fs);
