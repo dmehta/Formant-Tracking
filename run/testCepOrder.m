@@ -9,11 +9,12 @@ Z = [700 1300]'; Zbw = [50 50]';
 dur = .5; % in s
 pNoiseVar = 10;
 snr_dB = 25;
-cepOrder_vect = 25:-1:23;
+cepOrder_vect = 30:-1:1;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 0;
-algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
-x0 = [F; Z]+100;
+algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
+x0 = [F; Z]+0;
 
 numTrials = 10;
 rmse = zeros(numTrials, length(cepOrder_vect));
@@ -23,7 +24,7 @@ for ii = 1:length(cepOrder_vect)
     for jj = 1:numTrials
         cepOrder = cepOrder_vect(ii);
         rmse(jj, ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-            cepOrder, fs, plot_flag, algFlag, x0);
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     end
 end
 

@@ -13,6 +13,7 @@ pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 15;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
@@ -25,7 +26,7 @@ for ii = 1:length(F2vect)
         F = [F1 F2vect(ii)]';
         x0 = [F; Z]+0;
         rmse(jj, ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-            cepOrder, fs, plot_flag, algFlag, x0);
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     end
 end
 
@@ -58,6 +59,7 @@ pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 15;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
@@ -70,7 +72,7 @@ for ii = 1:length(Z2vect)
         Z = [Z1 Z2vect(ii)]';
         x0 = [F; Z]+0;
         rmse(jj, ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-            cepOrder, fs, plot_flag, algFlag, x0);
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     end
 end
 
@@ -103,6 +105,7 @@ pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 15;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
@@ -115,7 +118,7 @@ for ii = 1:length(Zvect)
         Z = Zvect(ii);
         x0 = [F; Z]+0;
         rmse(jj, ii) = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-            cepOrder, fs, plot_flag, algFlag, x0);
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     end
 end
 
