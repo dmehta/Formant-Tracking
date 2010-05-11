@@ -15,7 +15,7 @@ function H = getH_FZBW(freqVals, bwVals, numFormants, cepOrder, fs)
 H = zeros(cepOrder, length(freqVals)+length(bwVals));
 numAntiformants = length(freqVals)-numFormants;
 
-for i = 1:cepOrder
+for ii = 1:cepOrder
     % Thiis loop updates the matrix based on resonance center frequencies
     for jj = 1:numFormants
         bw = exp(-pi * ii * bwVals(jj)/fs);

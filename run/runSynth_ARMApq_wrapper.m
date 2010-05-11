@@ -11,6 +11,7 @@
 %    snr_dB:    observation noise, in dB
 %    cepOrder:  Number of cepstal coefficients to compute
 %    fs:        sampling rate of waveform, in Hz
+%    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
 %    x0:        initial state of formant trackers [F;Z], in Hz
@@ -28,12 +29,13 @@ pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 15;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 1;
 algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
 x0 = [F; Z]+0;
 
 [rmse_EKS, x_estEKS] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-        cepOrder, fs, plot_flag, algFlag, x0);
+        cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     
 figure, hold on
 plot(x_estEKS(1:length(F), :)', 'b')
@@ -52,12 +54,13 @@ pNoiseVar = 10;
 snr_dB = 25;
 cepOrder = 2;
 fs = 16e3;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 x0 = [F; Z]+500;
 
 [rmse_EKS, x_estEKS] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-        cepOrder, fs, plot_flag, algFlag, x0);
+        cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     
 figure, hold on
 plot(x_estEKS(1:length(F), :)', 'b')
@@ -70,19 +73,25 @@ rmse_EKS
 %% parameters
 F = [500 1000 1600]';
 Fbw = [100 80 100]';
-Z = [750]'; Zbw = [20]';
+Z = [750 1200]'; Zbw = [20 50]';
 
 dur = .5; % in s
-pNoiseVar = 400;
+pNoiseVar = 4;
 snr_dB = 25;
 cepOrder = 15;
 fs = 10e3;
+trackBW = 1;
 plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
-x0 = [F; Z]+0;
+
+if trackBW
+    x0 = [F; Fbw; Z; Zbw]+0;
+else
+    x0 = [F; Z]+0;
+end
 
 [rmse, x_est] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-        cepOrder, fs, plot_flag, algFlag, x0);
+        cepOrder, fs, trackBW, plot_flag, algFlag, x0);
     
 figure, hold on
 plot(x_est(1:length(F), :)', 'b')

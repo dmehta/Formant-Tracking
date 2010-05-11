@@ -25,6 +25,7 @@ dur = .5; % in s
 snr_dB = 25;
 cepOrder = 15;
 fs = 10e3;
+trackBW = 0;
 plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 wType = 'hanning';  % window type
@@ -82,7 +83,7 @@ end
 
 %%
 [rmse_EKS, x_estEKS] = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, ...
-        cepOrder, fs, plot_flag, algFlag, x0);
+        cepOrder, fs, trackBW, plot_flag, algFlag, x0);
 
 %%
 figure, hold on
@@ -91,3 +92,4 @@ plot(x_estEKS(size(Fcontour,2)+1:end, :)', 'r')
 xlabel('Frame')
 ylabel('Frequency (Hz)')
 title('Estimated EKS trajectories')
+rmse_EKS

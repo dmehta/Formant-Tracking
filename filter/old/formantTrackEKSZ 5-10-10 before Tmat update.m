@@ -54,7 +54,7 @@ P_pred = F*Q*F' + Q;
 for k = 1:N
     
     % Linearize about state (uses Taylor expansion)
-    if trackBW
+    if(trackBW)
         curFVals = m_pred([1:numF, 2*numF+1:2*numF+numAntiF],k);
         curBVals = m_pred([numF+1:2*numF, 2*numF+numAntiF+1:end],k);
         H = getH_FZBW(curFVals, curBVals, numF, cepOrder, fs);
@@ -64,19 +64,20 @@ for k = 1:N
         H = getH_FZ(curFVals, curBVals, numF, cepOrder, fs);
     end
     
-    mask = diag(formantInds(k,:)); % Pull out coasting indices
+    curInds = formantInds(k,:); % Pull out coasting indices
+    if(trackBW)
+        mask = diag([curInds curInds]); % Repeat mask for observation matrix
+    else
+        mask = diag(curInds);
+    end
 
     % Compute gain and knock out unobservables
     S = H*P_pred(:,:,k)*H' + R;
-    K = (mask*P_pred(:,:,k)*H')/S; % K is the gain
+    K = mask*P_pred(:,:,k)*H'*inv(S); % K is the gain
      
     % Update steps
-    if ~numAntiF
-        ypred = fb2cp(curFVals(1:numF), curBVals(1:numF),cepOrder,fs)';    
-    else
-        ypred = fb2cp(curFVals(1:numF), curBVals(1:numF),cepOrder,fs)'-...
-            fb2cp(curFVals(numF+1:end), curBVals(numF+1:end),cepOrder,fs)';
-    end
+    ypred = fb2cp(curFVals(1:numF,k), curBVals(1:numF,k),cepOrder,fs)'-...
+        fb2cp(curFVals(numF+1:end,k), curBVals(numF+1:end,k),cepOrder,fs)';
     
     % Calculate innovation and likelihood
     e     = y(:,k) - ypred;  % Innovation             
@@ -104,34 +105,24 @@ for k = 1:N
         [m_up(1:numF,k) I1] = sort(abs(m_up(1:numF,k))); % formant frequencies
         if trackBW
             [m_up(2*numF+1:2*numF+numAntiF,k) I2] = sort(abs(m_up(2*numF+1:2*numF+numAntiF,k))); % anti-formant frequencies
-
+            
+            m_up(numF+1:end,k) = m_up(numF+I,k);
+            
             m_up(numF+1:2*numF,k) = m_up(numF+I1,k); % formant bandwidths
             m_up(2*numF+numAntiF+1:end,k) = m_up(2*numF+numAntiF+I2,k); % anti-formant bandwidths
         else
-            [m_up(numF+1:end,k) I2] = sort(abs(m_up(numF+1:end,k))); % anti-formant frequencies
+            [m_up(numF+1:end,k) I1] = sort(abs(m_up(numF+1:end,k))); % anti-formant frequencies
         end
        
         % Build permutation matrix to adjust covariance
         Tmat = zeros(size(F));
-        for i = 1:numF
-            Tmat(i,I1(i)) = 1;
-            if trackBW
-                Tmat(i+numF, I1(i)+numF) = 1;
-            end
-        end        
-        if numAntiF % zeros also
-            if ~trackBW % not tracking bandwidths
-                for i = numF+1:length(F)
-                    Tmat(i,I2(i-numF)+numF) = 1;
-                end
+        for i = 1:length(F)
+            if(i <= numF)
+                Tmat(i,I1(i)) = 1;
             else
-                for i = 2*numF+1:2*numF+numAntiF
-                    Tmat(i,I2(i-2*numF)+2*numF) = 1;
-                    Tmat(i+numAntiF, I2(i-2*numF)+2*numF+numAntiF) = 1;
-                end
+                Tmat(i,I2(i-numF)) = 1;
             end
         end
-            
         % Adjust covariance matrix
         P_up(:,:,k) = Tmat*P_up(:,:,k)*Tmat';
     end
@@ -157,12 +148,12 @@ if(smooth)
     
     for k = (N-1):-1:1
         % Compute prediction steps for all but the last step
-        sgain = (P_up(:,:,k)*F')/(F*P_up(:,:,k)*F' + Q);
+        sgain = P_up(:,:,k)*F'*inv(F*P_up(:,:,k)*F' + Q);
         m_upS(:,k)     = m_up(:,k)  + sgain*(m_upS(:,k+1)  - m_pred(:,k+1));
         P_upS(:,:,k)   = P_up(:,:,k)+ sgain*(P_upS(:,:,k+1) - P_pred(:,:,k+1))*sgain';
         
         % Need this calculation for subsequent EM iterations
-        PP_upS(:,:,k) = PP_up(:,:,k) + (P_upS(:,:,k)-P_up(:,:,k))/(P_up(:,:,k))*PP_up(:,:,k);
+        PP_upS(:,:,k) = PP_up(:,:,k) + (P_upS(:,:,k)-P_up(:,:,k))*inv(P_up(:,:,k))*PP_up(:,:,k);
     end
 else
     % Just package the filtered outputs

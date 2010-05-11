@@ -1,4 +1,4 @@
-function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
+function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOrder, fs, plot_flag, algFlag, x0)
 
 % Track formants and anti-formants (no bandwidths) on synthetic data
 % that constructs a waveform using overlap-add of windows generated from an
@@ -17,7 +17,6 @@ function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOr
 %    snr_dB:    observation noise, in dB
 %    cepOrder:  Number of cepstal coefficients to compute
 %    fs:        sampling rate of waveform, in Hz
-%    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
 %    x0:        initial states (center frequencies) of formant trackers [(numFormants + numAntiformants) x 1], in Hz
@@ -122,48 +121,37 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
+trueState = [Fcontour'; Zcontour'];
+
 nP = size(Fcontour, 2);
 nZ = size(Zcontour, 2);
 numObs = size(y,2);
 
-FbwStates = repmat(Fbw, 1, size(y,2));
-ZbwStates = repmat(Zbw, 1, size(y,2));
+Fmatrix = eye(nP + nZ);   % Process Matrix F
 
-if trackBW
-    trueState = [Fcontour'; FbwStates'; Zcontour'; ZbwStates];
-    bwStates = []; % If we are tracking bandwidths do not provide them
-else
-    trueState = [Fcontour'; Zcontour'];
-    bwStates = [FbwStates; ZbwStates];
+pNoiseVar = zeros(1, size(trueState,1));
+for ii = 1:length(pNoiseVar)
+    pNoiseVar(ii) = cov(trueState(ii, 2:end)-trueState(ii, 1:end-1));
 end
-stateLen = size(trueState,1);
+Q = diag(pNoiseVar+eps);
 
-% Process Matrix F
-Fmatrix = eye(stateLen);
-
-% process noise estimated from variance of known data
-% pNoiseVar = zeros(1, stateLen);
-% for ii = 1:length(pNoiseVar)
-%     pNoiseVar(ii) = cov(trueState(ii, 2:end)-trueState(ii, 1:end-1));
-% end
-% Q = diag(pNoiseVar+eps);
-Q = diag(var(trueState(:,2:end)-trueState(:,1:end-1),0,2)+eps);
-
-% observation noise added given SNR in input
 [y, oNoiseVar] = addONoise(y, snr_dB);
 R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
+bwFlag = 1; % 0 - Use loaded bandwidths, 1 - Average bandwidths
+bwStates = repmat([Fbw; Zbw], 1, size(y,2));
+
 % A voice activity detector is not used here in the synthetic case
-formantInds = ones(numObs,stateLen);
+formantInds = ones(N,nP + nZ);
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables
 
-EKF = 1; EKS = 2;
+% Initialize root-mean-square error matrices:
+rmse    = zeros(nP + nZ, sum(algFlag));
+relRmse = zeros(nP + nZ, sum(algFlag));
 
-% Initialize root-mean-square error matrices
-rmse    = zeros(stateLen, sum(algFlag));
-relRmse = zeros(stateLen, sum(algFlag));
+EKF = 1; EKS = 2;
 
 %% Run Extended Kalman Filter
 if algFlag(EKF)
@@ -177,7 +165,7 @@ if algFlag(EKF)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
@@ -202,7 +190,7 @@ if algFlag(EKS)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
@@ -223,3 +211,15 @@ if plot_flag
     % A basic plotting routine to visualize results
     plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
 end
+
+%%
+% figure, hold on
+% frame = 1:numFrames;
+% plot(frame', x_estEKS(1:size(Fcontour, 2), :)', 'b', ...
+%     frame', Fcontour(:, 1:size(Fcontour, 2)), 'b:')
+% legend('Resonances', 'True resonances')
+% xlabel('Frame')
+% ylabel('Frequency (Hz)')
+% title('Estimated EKS trajectories')
+
+rmse_mean

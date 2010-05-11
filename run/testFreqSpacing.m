@@ -4,9 +4,8 @@ close all
 
 %% parameters for pole/pole
 clear
-close all
 
-F1 = 1000; F2vect = 2000:-1:1000;
+F1 = 1000; F2vect = 2000:-10:1000;
 Fbw = [100 100]';
 Z = []; Zbw = [];
 dur = .5; % in s
@@ -46,14 +45,13 @@ xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('Two resonances')
 
-save('../testFreqSpacing_results/pole-pole.mat')
+save('../results/testFreqSpacing_pole-pole.mat')
 
 %% parameters for zero/zero
 clear
-close all
 
 F = 500; Fbw = 100;
-Z1 = 1000; Z2vect = 2000:-100:1000;
+Z1 = 1000; Z2vect = 2000:-10:1000;
 Zbw = [100 100]';
 dur = .5; % in s
 pNoiseVar = 10;
@@ -92,15 +90,14 @@ xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('Two anti-resonances')
 
-save('../testFreqSpacing_results/zero-zero.mat')
+save('../results/testFreqSpacing_zero-zero.mat')
 
 %% parameters for pole/zero
 clear
-close all
 
 F = 1000;
 Fbw = [100]';
-Zvect = 2000:-100:1000; Zbw = [50];
+Zvect = 2000:-10:1000; Zbw = [50];
 dur = .5; % in s
 pNoiseVar = 10;
 snr_dB = 25;
@@ -139,4 +136,4 @@ xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('One resonance, one anti-resonance')
 
-save('../testFreqSpacing_results/pole-zero.mat')
+save('../results/testFreqSpacing_pole-zero.mat')

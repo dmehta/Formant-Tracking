@@ -42,4 +42,4 @@ box off
 xlabel('# cepstral coefficents')
 ylabel('Average RMSE (Hz)')
 
-% save('../testCepOrder_results/cepOrder_8-50.mat')
+save('../results/testCepOrder_8-50.mat')

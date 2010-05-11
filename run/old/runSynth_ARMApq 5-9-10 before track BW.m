@@ -1,4 +1,4 @@
-function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
+function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, plot_flag, algFlag, x0)
 
 % Track poles and zeros (no bandwidths) on synthetic data
 % Based on runSynthZ(), which was model-based. This function is
@@ -7,7 +7,6 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % Author: Daryush Mehta
 % Created:  04/30/2010
 % Modified: 05/01/2010 variable output number
-%           05/09/2010 track bandwidths
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (col vector), in Hz
@@ -19,7 +18,6 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 %    snr_dB:    observation noise, in dB
 %    cepOrder:  Number of cepstal coefficients to compute
 %    fs:        sampling rate of waveform, in Hz
-%    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
 %    x0:        initial state of formant trackers [F;Z], in Hz
@@ -41,8 +39,8 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % formants that are available.
 
 addpath(genpath('../')); % Paths
-% rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
-rand('state', 2); randn('state', 44);
+rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 2); randn('state', 44);
 
 %% Create an ARMA model by filtering a white noise sequence
 N = round(dur*fs);
@@ -175,37 +173,28 @@ nP = length(F);
 nZ = length(Z);
 numObs = size(y, 2);
 
-if trackBW
-    trueState = [repmat(F, 1, size(y,2)); repmat(Fbw, 1, size(y,2)); ...
-        repmat(Z, 1, size(y,2)); repmat(Zbw, 1, size(y,2))];
-    bwStates = []; % If we are tracking bandwidths do not provide them
-else
-    trueState = repmat([F; Z], 1, size(y,2));
-    bwStates = repmat([Fbw; Zbw], 1, size(y,2));
-end
-stateLen = size(trueState,1);
+Fmatrix = eye(nP + nZ);   % Process Matrix F
 
-% Process Matrix F
-Fmatrix = eye(stateLen);
+Q = diag(ones(nP+nZ,1)*pNoiseVar);
 
-% process noise is input parameter
-Q = diag(pNoiseVar*ones(stateLen,1));
-
-% observation noise added given SNR in input
 [y, oNoiseVar] = addONoise(y, snr_dB);
 R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
+bwFlag = 1; % 0 - Use loaded bandwidths, 1 - Average bandwidths
+bwStates = repmat([Fbw; Zbw], 1, size(y,2));
+
 % A voice activity detector is not used here in the synthetic case
-formantInds = ones(numObs,stateLen);
+formantInds = ones(N,nP + nZ);
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables
 
-EKF = 1; EKS = 2;
+% Initialize root-mean-square error matrices:
+rmse    = zeros(nP + nZ, sum(algFlag));
+relRmse = zeros(nP + nZ, sum(algFlag));
 
-% Initialize root-mean-square error matrices
-rmse    = zeros(stateLen, sum(algFlag));
-relRmse = zeros(stateLen, sum(algFlag));
+EKF = 1; EKS = 2;
+trueState = repmat([F; Z], 1, size(y,2));
 
 % Run Extended Kalman Filter
 if algFlag(EKF)
@@ -219,7 +208,7 @@ if algFlag(EKF)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
@@ -244,7 +233,7 @@ if algFlag(EKS)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end

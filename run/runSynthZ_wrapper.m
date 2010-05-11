@@ -15,7 +15,7 @@
 nP = 4;
 nZ = 4;
 N = 100;
-pNoiseVar = 1;
+pNoiseVar = 40;
 snr_dB = 40;
 cepOrder = 15;
 fs = 16e3;

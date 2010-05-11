@@ -22,11 +22,11 @@ testMethod = 'Synth';
 snr_dB = 100;
 cepOrder = 15;
 fs = 16e3;
-numFormants = 5;
-trackBW = 0;
+numFormants = 4;
+trackBW = 1;
 numParticles = [];
 N = 30;
-pNoiseVar = 1;
+pNoiseVar = 100;
 doPlots = 1;
 
 rmse = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackBW, numParticles, doPlots, N, pNoiseVar);
