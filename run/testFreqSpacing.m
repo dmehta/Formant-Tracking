@@ -1,6 +1,5 @@
 %% RMSE vs spacing between center frequencies
 clear
-close all
 
 %% parameters for pole/pole
 clear
@@ -123,7 +122,6 @@ for ii = 1:length(Zvect)
 end
 
 % plot RMSE vs frequency spacing
-figure
 xdata = Zvect-F;
 ydata = mean(rmse, 1);
 yerror = std(rmse, 0, 1);

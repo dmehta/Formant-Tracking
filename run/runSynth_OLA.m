@@ -221,5 +221,7 @@ if plot_flag
     titleCell(2,1)  = {'r'};            % Color for true state plot
 
     % A basic plotting routine to visualize results
-    plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
+    for j = 1:sum(algFlag)
+        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), nP);
+    end
 end

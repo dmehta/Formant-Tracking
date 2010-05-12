@@ -31,7 +31,7 @@ cepOrder = 15;
 fs = 16e3;
 trackBW = 0;
 plot_flag = 1;
-algFlag = [1 0]; % Select 1 to run, 0 not to; [EKF EKS]
+algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 x0 = [F; Z]+0;
 
 [rmse_EKS, x_estEKS] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...

@@ -1,15 +1,14 @@
 %% RMSE vs number of cepstral coefficients
 clear
-close all
 
 %% parameters
 F = [500 1500 2500 3500]';
 Fbw = [100 100 100 100]';
-Z = [700 1300]'; Zbw = [50 50]';
+Z = [700 1300 2700]'; Zbw = [50 50 50]';
 dur = .5; % in s
 pNoiseVar = 10;
 snr_dB = 25;
-cepOrder_vect = 30:-1:1;
+cepOrder_vect = 25:-1:5;
 fs = 16e3;
 trackBW = 0;
 plot_flag = 0;
@@ -43,4 +42,4 @@ box off
 xlabel('# cepstral coefficents')
 ylabel('Average RMSE (Hz)')
 
-save('../results/testCepOrder_8-50.mat')
+save('../results/testCepOrder_1-40.mat')
