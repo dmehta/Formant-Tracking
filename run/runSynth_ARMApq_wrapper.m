@@ -75,7 +75,7 @@ F = [500 1000 1600]';
 Fbw = [100 80 100]';
 Z = [750 1200]'; Zbw = [20 50]';
 
-dur = .5; % in s
+dur = .25; % in s
 pNoiseVar = 4;
 snr_dB = 25;
 cepOrder = 15;

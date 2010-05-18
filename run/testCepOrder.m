@@ -29,17 +29,11 @@ end
 
 % plot RMSE vs cepstral order
 xdata = cepOrder_vect;
-ydata = mean(rmse, 1);
-yerror = std(rmse, 0, 1);
-
-ydata_upper = ydata + yerror;
-ydata_lower = ydata - yerror;
-
-figure, fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-hold on, plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-box off
-
+figure, box off, hold on
+[ydata_lower ydata_upper ydata] = findCI(rmse, 95);
+fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
 xlabel('# cepstral coefficents')
 ylabel('Average RMSE (Hz)')
 
-save('../results/testCepOrder_1-40.mat')
+% save('../results/testCepOrder_1-40.mat')

@@ -21,7 +21,7 @@
 %       [rmse_mean1, x_est1, rmse_mean2, x_est2]
 
 %% parameters
-dur = .5; % in s
+dur = .25; % in s
 snr_dB = 25;
 cepOrder = 15;
 fs = 10e3;
@@ -42,12 +42,14 @@ numFrames = floor(N/((1-wOverlap)*wLength))-1;
 %% Piecewise linear trajectory
 Fbeg = [500 1500 2500]';
 Fend = [1000 1100 3000]';
-Fcontour = interp1( [1 numFrames]', [Fbeg, Fend]', 1:numFrames ) + repmat(10*randn(size(Fcontour,1),1), 1, size(Fcontour,2));
+Fcontour = interp1( [1 numFrames]', [Fbeg, Fend]', 1:numFrames );
+Fcontour = Fcontour + repmat(10*randn(size(Fcontour,1),1), 1, size(Fcontour,2));
 Fbw = [100 100 100]';
 
 Zbeg = [4000]';
 Zend = [4000]';
-Zcontour = interp1( [1 numFrames]', [Zbeg, Zend]', 1:numFrames )' + repmat(10*randn(size(Zcontour,1),1), 1, size(Zcontour,2)); % if one anti-formant, need to take transpose here
+Zcontour = interp1( [1 numFrames]', [Zbeg, Zend]', 1:numFrames )'; % if one anti-formant, need to take transpose here
+Zcontour = Zcontour + repmat(10*randn(size(Zcontour,1),1), 1, size(Zcontour,2));
 Zbw = [100]';
 
 % Zcontour = []'; Zbw = []';
@@ -82,7 +84,7 @@ if isempty(Fcontour) && ~isempty(Zcontour)
 end
 
 %%
-numTrials = 20;
+numTrials = 10;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials,1);
 
@@ -120,14 +122,11 @@ end
 xdata = 1:numFrames;
 figure, box off, hold on
 for kk = 1:size(trueState,1)
-    ydata = mean(x_estPerFreq(:,:,kk), 1);
-    yerror = std(x_estPerFreq(:,:,kk), 0, 1);
-
-    ydata_upper = ydata + yerror;
-    ydata_lower = ydata - yerror;
-
+    [ydata_lower ydata_upper ydata] = findCI(x_estPerFreq(:,:,kk), 95);
     fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
     plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
+    xlabel('Frame')
+    ylabel('Frequency (Hz)')
 end
 
 %% plot tracks individually in grid style

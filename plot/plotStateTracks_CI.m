@@ -3,11 +3,11 @@
 %
 % Author: Patrick J. Wolfe, Daniel Rudoy, Daryush Mehta
 %
-% Created: 05/12/2010
-% Modified: 05/12/2010
+% Created: 03/13/2007 
+% Modified: 05/17/2010 (add confidence intervals)
 
-function plotStateTracksFZ_CI(trueState,x_est,titleCell,nP)
-% Plot estimated formant tracks for poles/zeros vs. ground truth with
+function plotStateTracks_CI(trueState,x_est,titleCell)
+% Plot estimated formant tracks for poles vs. ground truth with
 % 95% confidence interval around mean
 
 % Number of track estimates
@@ -48,13 +48,8 @@ for ff = 1:numStates
     plot(trueState(ff,:), char(titleCell(2,1)));
     yrange = get(gca, 'YLim');
     yrangemax = max(yrangemax, yrange(2)-yrange(1));
-    
-    if ff > nP
-        title(['Anti-resonance ' int2str(ff-nP)]);
-    else
-        title(['Resonance ' int2str(ff)]);
-    end
-    
+    title(['Resonance ' int2str(ff)]);
+    legend(S{1},S{2});
     if ff==1
         legend('95% CI', S{2},S{1})
         xlabel('Time Block');

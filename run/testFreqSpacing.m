@@ -29,23 +29,17 @@ for ii = 1:length(F2vect)
     end
 end
 
-% plot RMSE vs frequency spacing
+%% plot RMSE vs frequency spacing
 xdata = F2vect-F1;
-ydata = mean(rmse, 1);
-yerror = std(rmse, 0, 1);
-
-ydata_upper = ydata + yerror;
-ydata_lower = ydata - yerror;
-
-figure, fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-hold on, plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-box off
-
+figure, box off, hold on
+[ydata_lower ydata_upper ydata] = findCI(rmse, 95);
+fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
 xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('Two resonances')
 
-save('../results/testFreqSpacing_pole-pole.mat')
+% save('../results/testFreqSpacing_pole-pole.mat')
 
 %% parameters for zero/zero
 clear
@@ -62,7 +56,7 @@ trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
-numTrials = 2;
+numTrials = 10;
 rmse = zeros(numTrials, length(Z2vect));
 
 % loop through Z2
@@ -75,23 +69,17 @@ for ii = 1:length(Z2vect)
     end
 end
 
-% plot RMSE vs frequency spacing
+%% plot RMSE vs frequency spacing
 xdata = Z2vect-Z1;
-ydata = mean(rmse, 1);
-yerror = std(rmse, 0, 1);
-
-ydata_upper = ydata + yerror;
-ydata_lower = ydata - yerror;
-
-figure, fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-hold on, plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-box off
-
+figure, box off, hold on
+[ydata_lower ydata_upper ydata] = findCI(rmse, 95);
+fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
 xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('Two anti-resonances')
 
-save('../results/testFreqSpacing_zero-zero.mat')
+% save('../results/testFreqSpacing_zero-zero.mat')
 
 %% parameters for pole/zero
 clear
@@ -121,20 +109,15 @@ for ii = 1:length(Zvect)
     end
 end
 
-% plot RMSE vs frequency spacing
+%% plot RMSE vs frequency spacing
 xdata = Zvect-F;
-ydata = mean(rmse, 1);
-yerror = std(rmse, 0, 1);
 
-ydata_upper = ydata + yerror;
-ydata_lower = ydata - yerror;
-
-figure, fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-hold on, plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-box off
-
+figure, box off, hold on
+[ydata_lower ydata_upper ydata] = findCI(rmse, 95);
+fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
 xlabel('Spacing (Hz)')
 ylabel('Average RMSE')
 title('One resonance, one anti-resonance')
 
-save('../results/testFreqSpacing_pole-zero.mat')
+% save('../results/testFreqSpacing_pole-zero.mat')
