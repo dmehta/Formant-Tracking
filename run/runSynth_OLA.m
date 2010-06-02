@@ -1,4 +1,4 @@
-function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
+function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
 
 % Track formants and anti-formants (no bandwidths) on synthetic data
 % that constructs a waveform using overlap-add of windows generated from an
@@ -6,13 +6,13 @@ function varargout = runSynth_OLA(Fcontour, Fbw, Zcontour, Zbw, N, snr_dB, cepOr
 % 
 % Author: Daryush Mehta
 % Created:  05/09/2010
-% Modified: 05/09/2010
+% Modified: 05/17/2010 (bandwidth contours)
 % 
 % INPUT:
-%    Fcontour:  center frequencies of the resonances (numFrames x numFormants), in Hz
-%    Fbw:       corresponding bandwidths of the resonances (numFormants x 1), in Hz
+%    F:         center frequencies of the resonances (numFrames x numFormants), in Hz
+%    Fbw:       corresponding bandwidths of the resonances (numFrames x numFormants), in Hz
 %    Z:         center frequencies of the anti-resonances (numFrames x numAntiformants), in Hz
-%    Zbw:       corresponding bandwidths of the anti-resonances (numAntiformants x 1), in Hz
+%    Zbw:       corresponding bandwidths of the anti-resonances (numFrames x numAntiformants), in Hz
 %    N:         length of signal, in samples
 %    snr_dB:    observation noise, in dB
 %    cepOrder:  Number of cepstal coefficients to compute
@@ -62,23 +62,38 @@ wLeft  = 1:wLength*(1-wOverlap):N-wLength+1;
 wRight = wLength:wLength*(1-wOverlap):N;
 
 % Compute number of frames
-if ~isempty(Fcontour)
-    numFrames = size(Fcontour, 1);
+if ~isempty(F)
+    numFrames = size(F, 1);
 else
-    numFrames = size(Zcontour, 1);
+    numFrames = size(Z, 1);
+end
+
+% If input is scalar, expand to number of frames
+if sum(size(F)) <= 2
+    F = repmat(F, 1, numFrames);
+end
+if sum(size(Z)) <= 2
+    Z = repmat(Z, 1, numFrames);
+end
+
+if sum(size(Fbw)) <= 2
+    Fbw = repmat(Fbw, 1, numFrames);
+end
+if sum(size(Zbw)) <= 2
+    Zbw = repmat(Zbw, 1, numFrames);
 end
 
 for i=1:numFrames
-    if ~isempty(Fcontour) && ~isempty(Zcontour)
-        [num, denom] = fb2tf(Fcontour(i, :)', Fbw, Zcontour(i, :)', Zbw, fs);
+    if ~isempty(F) && ~isempty(Z)
+        [num, denom] = fb2tf(F(i, :)', Fbw(i, :)', Z(i, :)', Zbw(i, :)', fs);
     end
     
-    if ~isempty(Fcontour) && isempty(Zcontour)
-        [num, denom] = fb2tf(Fcontour(i, :)', Fbw, [], [], fs);
+    if ~isempty(F) && isempty(Z)
+        [num, denom] = fb2tf(F(i, :)', Fbw(i, :)', [], [], fs);
     end
     
-    if isempty(Fcontour) && ~isempty(Zcontour)
-        [num, denom] = fb2tf([], [], Zcontour(i, :)', Zbw, fs);
+    if isempty(F) && ~isempty(Z)
+        [num, denom] = fb2tf([], [], Z(i, :)', Zbw(i, :)', fs);
     end
     
     tmp = filter(num, denom, randn(wLength,1));    
@@ -97,8 +112,8 @@ x = x./(windows+eps); % divide out window effect
 wType = 'hanning'; % window type
 wLengthMS  = 20; % Length of window (in milliseconds)
 wOverlap = 0; % Factor of overlap of window
-lpcOrder = size(Fcontour, 2)*2; % Number of LPC coefficients
-zOrder = size(Zcontour, 2)*2; % Number of MA coefficients
+lpcOrder = size(F, 2)*2; % Number of LPC coefficients
+zOrder = size(Z, 2)*2; % Number of MA coefficients
 peCoeff = 0; % Pre-emphasis factor
 
 wLength = floor(wLengthMS/1000*fs);
@@ -122,19 +137,16 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
-nP = size(Fcontour, 2);
-nZ = size(Zcontour, 2);
+nP = size(F, 2);
+nZ = size(Z, 2);
 numObs = size(y,2);
 
-FbwStates = repmat(Fbw, 1, size(y,2));
-ZbwStates = repmat(Zbw, 1, size(y,2));
-
 if trackBW
-    trueState = [Fcontour'; FbwStates'; Zcontour'; ZbwStates];
+    trueState = [F'; Fbw'; Z'; Zbw'];
     bwStates = []; % If we are tracking bandwidths do not provide them
 else
-    trueState = [Fcontour'; Zcontour'];
-    bwStates = [FbwStates; ZbwStates];
+    trueState = [F'; Z'];
+    bwStates = [Fbw'; Zbw'];
 end
 stateLen = size(trueState,1);
 
@@ -142,11 +154,6 @@ stateLen = size(trueState,1);
 Fmatrix = eye(stateLen);
 
 % process noise estimated from variance of known data
-% pNoiseVar = zeros(1, stateLen);
-% for ii = 1:length(pNoiseVar)
-%     pNoiseVar(ii) = cov(trueState(ii, 2:end)-trueState(ii, 1:end-1));
-% end
-% Q = diag(pNoiseVar+eps);
 Q = diag(var(trueState(:,2:end)-trueState(:,1:end-1),0,2)+eps);
 
 % observation noise added given SNR in input
