@@ -33,7 +33,7 @@ function [m_upS, P_upS, PP_upS, lgLkl] = formantTrackEKSZ(y, F, Q, R, x0, forman
 %   Author: Daniel Rudoy, Daryush Mehta
 %   Created: 02/28/2008
 %   Modified: 02/10/2010, 03/21/2010
-%             05/9/2010 (bandwidth tracking)
+%             05/09/2010 (bandwidth tracking), 06/02/2010
 
 % If bandwidth tracks not provided, have to track them
 trackBW = isempty(bwStates);
@@ -64,7 +64,7 @@ for k = 1:N
         H = getH_FZ(curFVals, curBVals, numF, cepOrder, fs);
     end
     
-    mask = diag(formantInds(k,:)); % Pull out coasting indices
+    mask = diag(formantInds(:,k)); % Pull out coasting indices
 
     % Compute gain and knock out unobservables
     S = H*P_pred(:,:,k)*H' + R;

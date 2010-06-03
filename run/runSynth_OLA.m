@@ -9,10 +9,10 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 % Modified: 05/17/2010 (bandwidth contours)
 % 
 % INPUT:
-%    F:         center frequencies of the resonances (numFrames x numFormants), in Hz
-%    Fbw:       corresponding bandwidths of the resonances (numFrames x numFormants), in Hz
-%    Z:         center frequencies of the anti-resonances (numFrames x numAntiformants), in Hz
-%    Zbw:       corresponding bandwidths of the anti-resonances (numFrames x numAntiformants), in Hz
+%    F:         center frequencies of the resonances (numFormants x numFrames), in Hz
+%    Fbw:       corresponding bandwidths of the resonances (numFormants x numFrames), in Hz
+%    Z:         center frequencies of the anti-resonances (numAntiformants x numFrames), in Hz
+%    Zbw:       corresponding bandwidths of the anti-resonances (numAntiformants x numFrames), in Hz
 %    N:         length of signal, in samples
 %    snr_dB:    observation noise, in dB
 %    cepOrder:  Number of cepstal coefficients to compute
@@ -20,7 +20,7 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 %    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
-%    x0:        initial states (center frequencies) of formant trackers [(numFormants + numAntiformants) x 1], in Hz
+%    x0:        initial states (center frequencies) of formant trackers [(2*numFormants + 2*numAntiformants) x 1], in Hz
 % 
 % OUTPUT:
 %    Depends on algFlag. For each algorithm, two outputs generated--
@@ -63,37 +63,37 @@ wRight = wLength:wLength*(1-wOverlap):N;
 
 % Compute number of frames
 if ~isempty(F)
-    numFrames = size(F, 1);
+    numFrames = size(F, 2);
 else
-    numFrames = size(Z, 1);
+    numFrames = size(Z, 2);
 end
 
 % If input is scalar, expand to number of frames
-if sum(size(F)) <= 2
+if size(F, 2) == 1
     F = repmat(F, 1, numFrames);
 end
-if sum(size(Z)) <= 2
+if size(Z, 2) == 1
     Z = repmat(Z, 1, numFrames);
 end
 
-if sum(size(Fbw)) <= 2
+if size(Fbw, 2) == 1
     Fbw = repmat(Fbw, 1, numFrames);
 end
-if sum(size(Zbw)) <= 2
+if size(Zbw, 2) == 1
     Zbw = repmat(Zbw, 1, numFrames);
 end
 
 for i=1:numFrames
     if ~isempty(F) && ~isempty(Z)
-        [num, denom] = fb2tf(F(i, :)', Fbw(i, :)', Z(i, :)', Zbw(i, :)', fs);
+        [num, denom] = fb2tf(F(:, i), Fbw(:, i), Z(:, i), Zbw(:, i), fs);
     end
     
     if ~isempty(F) && isempty(Z)
-        [num, denom] = fb2tf(F(i, :)', Fbw(i, :)', [], [], fs);
+        [num, denom] = fb2tf(F(:, i), Fbw(:, i), [], [], fs);
     end
     
     if isempty(F) && ~isempty(Z)
-        [num, denom] = fb2tf([], [], Z(i, :)', Zbw(i, :)', fs);
+        [num, denom] = fb2tf([], [], Z(:, i), Zbw(:, i), fs);
     end
     
     tmp = filter(num, denom, randn(wLength,1));    
@@ -112,8 +112,8 @@ x = x./(windows+eps); % divide out window effect
 wType = 'hanning'; % window type
 wLengthMS  = 20; % Length of window (in milliseconds)
 wOverlap = 0; % Factor of overlap of window
-lpcOrder = size(F, 2)*2; % Number of LPC coefficients
-zOrder = size(Z, 2)*2; % Number of MA coefficients
+lpcOrder = size(F, 1)*2; % Number of LPC coefficients
+zOrder = size(Z, 1)*2; % Number of MA coefficients
 peCoeff = 0; % Pre-emphasis factor
 
 wLength = floor(wLengthMS/1000*fs);
@@ -137,16 +137,15 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
-nP = size(F, 2);
-nZ = size(Z, 2);
+nP = size(F, 1);
 numObs = size(y,2);
 
 if trackBW
-    trueState = [F'; Fbw'; Z'; Zbw'];
+    trueState = [F; Fbw; Z; Zbw];
     bwStates = []; % If we are tracking bandwidths do not provide them
 else
-    trueState = [F'; Z'];
-    bwStates = [Fbw'; Zbw'];
+    trueState = [F; Z];
+    bwStates = [Fbw; Zbw];
 end
 stateLen = size(trueState,1);
 
@@ -155,13 +154,14 @@ Fmatrix = eye(stateLen);
 
 % process noise estimated from variance of known data
 Q = diag(var(trueState(:,2:end)-trueState(:,1:end-1),0,2)+eps);
+% Q = Q.*diag([1 1 100 100 1 100]);
 
 % observation noise added given SNR in input
 [y, oNoiseVar] = addONoise(y, snr_dB);
 R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
 % A voice activity detector is not used here in the synthetic case
-formantInds = ones(numObs,stateLen);
+formantInds = ones(stateLen, numObs);
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables

@@ -33,7 +33,7 @@ for ii = 1:cepOrder
         H(ii,jj) =  4*pi/fs*bw*sin(2*pi*ii*freqVals(jj-numFormants)/fs);
     end
     % This loop updates the value above based on anti-resonance bandwidths
-    for jj = 2*numFormants + numAntiformants + 1:length(freqVals)
+    for jj = 2*numFormants + numAntiformants + 1:length(freqVals)+length(bwVals)
         bw = exp(-pi * ii * bwVals(jj-2*numFormants)/fs);
         H(ii,jj) =  2*pi/fs*bw*cos(2*pi*ii*freqVals(jj-2*numFormants)/fs);
     end    
