@@ -176,12 +176,12 @@ nZ = length(Z);
 numObs = size(y, 2);
 
 if trackBW
-    trueState = [repmat(F, 1, size(y,2)); repmat(Fbw, 1, size(y,2)); ...
-        repmat(Z, 1, size(y,2)); repmat(Zbw, 1, size(y,2))];
+    trueState = [repmat(F, 1, numObs); repmat(Fbw, 1, numObs); ...
+        repmat(Z, 1, numObs); repmat(Zbw, 1, numObs)];
     bwStates = []; % If we are tracking bandwidths do not provide them
 else
-    trueState = repmat([F; Z], 1, size(y,2));
-    bwStates = repmat([Fbw; Zbw], 1, size(y,2));
+    trueState = repmat([F; Z], 1, numObs);
+    bwStates = repmat([Fbw; Zbw], 1, numObs);
 end
 stateLen = size(trueState,1);
 
@@ -196,7 +196,7 @@ Q = diag(pNoiseVar*ones(stateLen,1));
 R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
 % A voice activity detector is not used here in the synthetic case
-formantInds = ones(numObs,stateLen);
+formantInds = ones(stateLen,numObs);
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables

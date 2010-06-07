@@ -1,4 +1,6 @@
 %%
+clear 
+
 fs = 4000;
 pOrder = 4;
 zOrder = 4;

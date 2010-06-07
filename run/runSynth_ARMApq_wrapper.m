@@ -1,4 +1,4 @@
-%% runSynth_ARMApq_wrapper.m
+%% runSynth_ARMApq_wrapper.m; DOES NOT TRACK BW
 % set parameters for runSynth_ARMApq.m
 % 
 % INPUT:
@@ -19,6 +19,8 @@
 % OUTPUT:
 %    rmse_mean: average RMSE across all tracks
 
+clear 
+
 %% parameters
 F = [500 1500 2500]';
 Fbw = [100 100 100]';
@@ -32,7 +34,7 @@ fs = 16e3;
 trackBW = 0;
 plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
-x0 = [F; Z]+0;
+x0 = [F; Z]+100;
 
 [rmse_EKS, x_estEKS] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
         cepOrder, fs, trackBW, plot_flag, algFlag, x0);
@@ -71,23 +73,27 @@ title('Estimated EKS trajectories')
 rmse_EKS
 
 %% parameters
+% F = [500 1000 1600]';
+% Fbw = [100 80 100]';
+% Z = [750 1200]'; Zbw = [20 50]';
+
 F = [500 1000 1600]';
-Fbw = [100 80 100]';
-Z = [750 1200]'; Zbw = [20 50]';
+Fbw = [100 120 140]';
+Z = [1200]'; Zbw = [120]';
 
 dur = .25; % in s
-pNoiseVar = 4;
+pNoiseVar = 40;
 snr_dB = 25;
 cepOrder = 15;
 fs = 10e3;
-trackBW = 1;
+trackBW = 0;
 plot_flag = 1;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
 if trackBW
-    x0 = [F; Fbw; Z; Zbw]+0;
+    x0 = [F; Fbw; Z; Zbw]+100;
 else
-    x0 = [F; Z]+0;
+    x0 = [F; Z]+100;
 end
 
 [rmse, x_est] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
