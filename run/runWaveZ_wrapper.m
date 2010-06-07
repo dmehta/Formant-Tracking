@@ -19,12 +19,13 @@ clear
 
 %% parameters
 cepOrder = 15;
-fs_in = 10e3;
-numFormants = 4;
-numAntiF = 0;
+fs_in = 2e3;
+numFormants = 1;
+numAntiF = 1;
 trackBW = 0;
 % dataFileName = '../data/synthData/mlm.tea.10k.wav';
-dataFileName = '../data/DDM_speech/WAV/ah.wav';
+% dataFileName = '../data/DDM_speech/WAV/ah.wav';
+dataFileName = '../data/DDM_speech/WAV/n.wav';
 wsFileName = '../data/synthData/mlm.tea.10k.FRM';
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
@@ -36,7 +37,7 @@ initAntiF = 700;
 initAntiFBW = 80;
 
 if numFormants && numAntiF
-    if trackBW %% THIS IS BEING TESTED
+    if trackBW
         x0 = [initFormant; initBW; initAntiF; initAntiFBW];
     else
         x0 = [];
@@ -44,7 +45,7 @@ if numFormants && numAntiF
 end
 
 if numFormants && ~numAntiF
-    if trackBW %% THIS IS BEING TESTED
+    if trackBW
         x0 = [initFormant; initBW];
     else
         x0 = initFormant;
@@ -75,6 +76,7 @@ end
 figure, hold on
 for jj = 1:numTrials
     plot(x_est{jj}(1:numFormants, :)', 'b')
+    plot(x_est{jj}(numFormants+1:end, :)', 'r')
 end
 xlabel('Frame')
 ylabel('Frequency (Hz)')
