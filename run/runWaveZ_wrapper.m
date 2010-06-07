@@ -18,29 +18,35 @@
 clear 
 
 %% parameters
-cepOrder = 15;
-fs_in = 2e3;
-numFormants = 1;
-numAntiF = 1;
+cepOrder = 25;
+numFormants = 3;
+numAntiF = 2;
 trackBW = 0;
 % dataFileName = '../data/synthData/mlm.tea.10k.wav';
 % dataFileName = '../data/DDM_speech/WAV/ah.wav';
 dataFileName = '../data/DDM_speech/WAV/n.wav';
-wsFileName = '../data/synthData/mlm.tea.10k.FRM';
+% dataFileName = '../data/DDM_speech/WAV/m.wav';
+% dataFileName = '../data/DDM_speech/WAV/ana.wav';
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
 %% initial state
-initFormant = 500 + 1000*(0:(numFormants - 1))';
-initBW = 80 + 40*(0:(numFormants - 1))';
+% initFormant = 200 + 1000*(0:(numFormants - 1))';
+% initBW = 80 + 40*(0:(numFormants - 1))';
+% 
+% initAntiF = 1200 + 1000*(0:(numAntiF - 1))';
+% initAntiFBW = 80 + 40*(0:(numAntiF - 1))';
 
-initAntiF = 700;
-initAntiFBW = 80;
+initFormant = [200 2000 3500]';
+initBW = [100 100 100]';
+
+initAntiF = [600 2500]';
+initAntiFBW = [100 100]';
 
 if numFormants && numAntiF
     if trackBW
         x0 = [initFormant; initBW; initAntiF; initAntiFBW];
     else
-        x0 = [];
+        x0 = [initFormant; initAntiF];
     end
 end
 
@@ -54,29 +60,23 @@ end
 
 if ~numFormants && numAntiF
     if trackBW
-        x0 = [];
+        x0 = [initAntiF; initAntiFBW];
     else
-        x0 = [];
+        x0 = [initAntiF];
     end
 end
 
 %%
-numTrials = 1;
-rmse = zeros(numTrials, 1);
-x_est = cell(numTrials, 1);
-
-for jj = 1:numTrials
-    tic
-    [rmse(jj), x_est{jj}] = runWaveZ(cepOrder, fs_in, numFormants, numAntiF, ...
-        trackBW, dataFileName, wsFileName, algFlag, x0);
-    toc
-end
+tic
+x_est = runWaveZ(cepOrder, numFormants, numAntiF, ...
+    trackBW, dataFileName, algFlag, x0);
+toc
 
 %% plot all tracks
 figure, hold on
 for jj = 1:numTrials
-    plot(x_est{jj}(1:numFormants, :)', 'b')
-    plot(x_est{jj}(numFormants+1:end, :)', 'r')
+    plot(x_est(1:numFormants, :)', 'b')
+    plot(x_est(numFormants+1:end, :)', 'r')
 end
 xlabel('Frame')
 ylabel('Frequency (Hz)')

@@ -1,4 +1,4 @@
-function [] = testARMAX()
+% function [] = testARMAX()
 
 % Play around with the SysID toolbox to see about pole zero estimation
 close all; clear all;
@@ -14,7 +14,8 @@ rz = .9; thetaz =  pi/4; % Complex-conjugate zero pair: (+/-  pi/4, .9)
 rp = .99; thetap = pi/3;  % Complex-conjugate pole pair: (+/- pi/3, .99)
 
 % Create an ARMA model by filtering a white noise sequence
-x = filter([1 -2*cos(thetaz)*rz rz^2], [1 -2*cos(thetap)*rp rp^2], randn(N,1));
+sigma = 1;
+x = filter([1 -2*cos(thetaz)*rz rz^2], [1 -2*cos(thetap)*rp rp^2], sigma*randn(N,1));
 
 disp(['True AR Coefficients:' num2str([1, -2*cos(thetap)*rp, rp^2])]);
 disp(['True MA Coefficients:' num2str([1, -2*cos(thetaz)*rz, rz^2])]);
@@ -46,3 +47,14 @@ m = armax(data,[p q]); % Call estimator with desired model orders
 disp('Sys ID toolbox ARMA estimates');
 disp(['AR Coeffs: ' num2str(m.a)]); % Estimated AR Coefficients
 disp(['MA Coeffs: ' num2str(m.c)]); % Estimated MA Coefficients
+
+%% to recover residual standard deviation and variance (power)
+e_ar = filter(arCoeffs, 1, x);
+norm(e_ar)/sqrt(length(e_ar))
+sqrt(mean(e_ar.^2)) % RMSE same as sigma
+mean(e_ar.^2) % power of residual
+
+e_arma = filter(m.a, m.c, x);
+norm(e_arma)/sqrt(length(e_arma))
+sqrt(mean(e_arma.^2)) % RMSE same as sigma
+mean(e_arma.^2) % power of residual
