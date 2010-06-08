@@ -1,13 +1,14 @@
 %%
 clear 
 
-fs = 10000; % Hz
-pOrder = 12;
-zOrder = 12;
+fs = 16000; % Hz
+pOrder = 20;
+zOrder = 20;
 peCoeff = .9;
-dur = 40e-3; % s
+dur = 48e-3; % s
 
-filename = '../data/DDM_speech/WAV/n.wav';
+% filename = '../data/DDM_speech/WAV/n.wav';
+filename = '../data/DDM_speech/WAV/an.wav';
 
 %%
 [x, fs_in] = wavread(filename);
@@ -83,58 +84,9 @@ disp(['Anti-Resonance BW: ', num2str(antiFBW')])
 
 %% residual
 e_arma = filter(m.a, m.c, x);
-e_arma_var = mean(e_arma.^2)
+e_arma_var = mean(e_arma.^2);
+disp(['Variance of ARMA residual: ', num2str(e_arma_var)])
 
 e_ar = filter(arCoeffs, 1, x);
-e_ar_var = mean(e_ar.^2)
-
-%%
-%                 % focus on changing first three formants, so find the three poles
-%                 % closest to the unit circle, not counting real poles
-%                 % corresponding to DC (freq = 0)
-%                 i = find(imag(z) == 0);
-%                 newZeros = z(i);
-% 
-%                 z(i) = -2;
-% 
-%                 [y, i] = (max(real(z)));
-%                 Z1 = z(i);
-%                 z(i) = -2; z(i+1) = -2; % assuming complex conjugate is next
-% 
-%                 %                 [y, i] = (max(real(z)));
-%                 %                 Z2 = z(i);
-%                 %                 z(i) = -2; z(i+1) = -2; % assuming complex conjugate is next
-%                 % 
-%                 %                 [y, i] = (max(real(z)));
-%                 %                 Z3 = z(i);
-%                 %                 z(i) = -2; z(i+1) = -2; % assuming complex conjugate is next        
-%                 % 
-%                 %                 newZeros = [newZeros; z( find( z ~= -2) )]; % keep other zeroes same
-% 
-%                 antiF = angle(Z1)/(2*pi)*fs;
-%                 antiFBW = -log(abs(Z1))*fs/pi; % needs to be CHANGED IN FORMANTS.PDF, add negative sign in (1)
-                
-%                 % focus on changing first three formants, so find the three poles
-%                 % closest to the unit circle, not counting real poles
-%                 % corresponding to DC (freq = 0)
-%                 i = find(imag(p) == 0);
-%                 newPoles = p(i);
-% 
-%                 p(i) = -2;
-% 
-%                 [y, i] = (max(real(p)));
-%                 F1 = p(i);
-%                 p(i) = -2; p(i+1) = -2; % assuming complex conjugate is next
-% 
-%                 [y, i] = (max(real(p)));
-%                 F2 = p(i);
-%                 p(i) = -2; p(i+1) = -2; % assuming complex conjugate is next
-% 
-%                 %                 [y, i] = (max(real(p)));
-%                 %                 F3 = p(i);
-%                 %                 p(i) = -2; p(i+1) = -2; % assuming complex conjugate is next        
-%                 
-%                 newPoles = [newPoles; p( find( p ~= -2) )]; % keep other poles same
-% 
-%                 F = angle([F1 F2])/(2*pi)*fs;
-%                 FBW = -log(abs([F1 F2]))*fs/pi; % needs to be CHANGED IN FORMANTS.PDF, add negative sign in (1)
+e_ar_var = mean(e_ar.^2);
+disp(['Variance of AR residual: ', num2str(e_ar_var)])

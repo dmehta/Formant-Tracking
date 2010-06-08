@@ -88,7 +88,7 @@ wType = 'hamming'; % Window type
 wLengthMS  = 40;   % Length of window (in milliseconds)
 wOverlap = 0.5;    % Factor of overlap of window
 lpcOrder = 12;     % Number of LPC Coefficients
-zOrder = 12;        % Number of MA coefficients
+zOrder = 4;        % Number of MA coefficients
 peCoeff  = .9;     % Pre-emphasis factor
 
 % Set sampling rate
@@ -135,8 +135,7 @@ if trackBW
 else
     stateLen = numFormants + numAntiF;
     
-    bwStates = repmat(x0(numFormants+1:numFormants*2), 1, numObs);
-    bwStates = [bwStates; repmat(x0(numFormants*2+numAntiF+1:end), 1, numObs)];
+    bwStates = repmat([60 200 200 200 130]', 1, numObs);
 end
 
 % A voice activity detector is not used here yet
@@ -190,5 +189,7 @@ if algFlag(EKS)
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
 end
 
+varargout(countOut) = {aParams};
+
 % Super-impose over a spectrogram
-plotSpecTracks2(wav, estTracks(1:numFormants+numAntiF,:), aParams, numAntiF);
+% plotSpecTracks2(wav, estTracks(1:numFormants+numAntiF,:), aParams, numAntiF);

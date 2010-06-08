@@ -18,29 +18,19 @@
 clear 
 
 %% parameters
-cepOrder = 25;
-numFormants = 3;
-numAntiF = 2;
+cepOrder = 20;
+numFormants = 4;
+numAntiF = 1;
 trackBW = 0;
-% dataFileName = '../data/synthData/mlm.tea.10k.wav';
-% dataFileName = '../data/DDM_speech/WAV/ah.wav';
-dataFileName = '../data/DDM_speech/WAV/n.wav';
-% dataFileName = '../data/DDM_speech/WAV/m.wav';
-% dataFileName = '../data/DDM_speech/WAV/ana.wav';
+dataFileName = '../data/DDM_speech/WAV/an.wav';
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
 %% initial state
-% initFormant = 200 + 1000*(0:(numFormants - 1))';
-% initBW = 80 + 40*(0:(numFormants - 1))';
-% 
-% initAntiF = 1200 + 1000*(0:(numAntiF - 1))';
-% initAntiFBW = 80 + 40*(0:(numAntiF - 1))';
+initFormant = [500 1500 2000 2700]';
+initBW = [60 200 200 200]';
 
-initFormant = [200 2000 3500]';
-initBW = [100 100 100]';
-
-initAntiF = [600 2500]';
-initAntiFBW = [100 100]';
+initAntiF = [750]';
+initAntiFBW = [130]';
 
 if numFormants && numAntiF
     if trackBW
@@ -68,17 +58,23 @@ end
 
 %%
 tic
-x_est = runWaveZ(cepOrder, numFormants, numAntiF, ...
+[x_est, aParams] = runWaveZ(cepOrder, numFormants, numAntiF, ...
     trackBW, dataFileName, algFlag, x0);
 toc
 
 %% plot all tracks
 figure, hold on
-for jj = 1:numTrials
-    plot(x_est(1:numFormants, :)', 'b')
-    plot(x_est(numFormants+1:end, :)', 'r')
-end
+plot(x_est(1:numFormants, :)', 'b')
+plot(x_est(numFormants+1:end, :)', 'r')
 xlabel('Frame')
 ylabel('Frequency (Hz)')
 title('Estimated EKS trajectories (Formant-blue, Antiformant-red)')
-    
+ylim([0 3000])
+xlim([1 size(x_est, 2)])
+
+%% Super-impose over a spectrogram
+[x, fs] = wavread(dataFileName);
+x = resample(x,10e3,fs,2048);
+plotSpecTracks2(x, x_est, aParams, numAntiF);
+axis tight
+ylim([0 3000])
