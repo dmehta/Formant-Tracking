@@ -32,6 +32,31 @@ foul
 foil
 sewer
 one
-piano
+pia
 
-Rainbow Passage
+Rainbow Passage (30)
+
+anga
+enge
+ingi
+ongo
+ungu
+
+(all following are whispered)
+ana
+ene
+ini
+ono
+unu
+
+ama
+ene
+ini
+ono
+unu
+
+anga
+enge
+ingi
+ongo
+ungu

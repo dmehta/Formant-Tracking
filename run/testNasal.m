@@ -1,14 +1,19 @@
 %%
 clear 
 
-fs = 16000; % Hz
-pOrder = 20;
-zOrder = 20;
+fs = 8000; % Hz
+pOrder = 12;
+zOrder = 12;
 peCoeff = .9;
-dur = 48e-3; % s
+dur = 40e-3; % s
 
+% filename = '../data/DDM_speech/WAV/m.wav';
 % filename = '../data/DDM_speech/WAV/n.wav';
-filename = '../data/DDM_speech/WAV/an.wav';
+% filename = '../data/DDM_speech/WAV/ng.wav';
+% filename = '../data/DDM_speech/WAV/m_asp.wav';
+% filename = '../data/DDM_speech/WAV/n_asp.wav';
+% filename = '../data/DDM_speech/WAV/ng_asp.wav';
+% filename = '../data/DDM_speech/WAV/an.wav';
 
 %%
 [x, fs_in] = wavread(filename);
@@ -39,11 +44,11 @@ spec = 20*log10(abs(fft(x, 512)));
 freq = (0:length(spec)-1)/length(spec)*fs;
 plot(freq(1:end/2), spec(1:end/2), 'Color', [.8 .8 .8])
 
-[spec, freq] = freqz(sqrt(e), arCoeffs, 512, fs);
-plot(freq, 20*log10(abs(spec))+20, 'k', 'LineWidth', 2)
+[spec, freq] = freqz(1, arCoeffs, 512, fs);
+plot(freq, 20*log10(abs(spec))-25, 'k', 'LineWidth', 2)
 
 [spec, freq] = freqz(m.c, m.a, 512, fs);
-plot(freq, 20*log10(abs(spec))-20, 'r', 'LineWidth', 2)
+plot(freq, 20*log10(abs(spec))-25, 'r', 'LineWidth', 2)
 
 ylim([-60 20])
 title('Power spectrum');

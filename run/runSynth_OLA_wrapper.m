@@ -23,12 +23,14 @@
 
 clear
 
+randn('state', 5)
+
 %% parameters
-dur = .25; % in s
+dur = .5; % in s
 snr_dB = 25;
-cepOrder = 15;
+cepOrder = 10;
 fs = 10e3;
-trackBW = 1;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 wType = 'hanning';  % window type
@@ -43,21 +45,23 @@ N = N - mod(N,wLength);
 numFrames = floor(N/((1-wOverlap)*wLength))-1;
 
 %% Piecewise linear trajectory
-if trackBW
     Fbeg = [500 1500 2500]';
     Fend = [1000 1100 3000]';
     F = interp1([1 numFrames]', [Fbeg, Fend]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
     F = F + 10*randn(size(F));
+
+    Zbeg = [4000]';
+    Zend = [4500]';
+    Z = interp1([1 numFrames]', [Zbeg, Zend]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
+    Z = Z + 10*randn(size(Z));
+    
+if trackBW
 
     Fbwbeg = [100 100 100]';
     Fbwend = [200 200 200]';
     Fbw = interp1([1 numFrames]', [Fbwbeg, Fbwend]', 1:numFrames)'; if length(Fbwbeg) == 1, Fbw=Fbw'; end;
     Fbw = Fbw + 10*randn(size(Fbw));
 
-    Zbeg = [4000]';
-    Zend = [4500]';
-    Z = interp1([1 numFrames]', [Zbeg, Zend]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
-    Z = Z + 10*randn(size(Z));
 
     Zbwbeg = [100]';
     Zbwend = [200]';
@@ -79,42 +83,30 @@ else
 end
 
 %% sinewave modulated trajectory
-if trackBW
-    Fbeg = [500 1000]';
+    %Fbeg = [500 1500 2500]';
+    Fbeg = [500]';
     Fpert = 75*repmat(cos(2*pi*8*[0:numFrames-1]/numFrames*dur), size(Fbeg, 1), 1);
     F = interp1([1 numFrames]', [Fbeg Fbeg]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
-    F = F + Fpert + 10*randn(size(F));
+    F = F + 10*randn(size(F));
 
-    Fbwbeg = [80 80]';
+    %Fbwbeg = [100 100 100]';
+    Fbwbeg = [100]';
     Fbwpert = 10*repmat(cos(2*pi*10*[0:numFrames-1]/numFrames*dur), size(Fbwbeg, 1), 1);
     Fbw = interp1([1 numFrames]', [Fbwbeg Fbwbeg]', 1:numFrames)'; if length(Fbwbeg) == 1, Fbw=Fbw'; end;
-    Fbw = Fbw + Fbwpert + 10*randn(size(Fbw));
+    Fbw = Fbw + 10*randn(size(Fbw));
 
-    Zbeg = [2000 4000]';
-    Zpert = 100*repmat(cos(2*pi*7*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
-    Z = interp1([1 numFrames]', [Zbeg Zbeg]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
-    Z = Z + Zpert + 10*randn(size(Z));
-
-    Zbwbeg = [100 100]';
-    Zbwpert = 10*repmat(cos(2*pi*6*[0:numFrames-1]/numFrames*dur), size(Zbwbeg, 1), 1);
-    Zbw = interp1([1 numFrames]', [Zbwbeg Zbwbeg]', 1:numFrames)'; if length(Zbwbeg) == 1, Zbw=Zbw'; end;
-    Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
-else
-    Fbeg = [500 1500 2500]';
-    Fbw = [100 100 100]';
-    Fpert = 75*repmat(cos(2*pi*4*[0:numFrames-1]/numFrames*dur), size(Fbeg, 1), 1);
-    F = interp1([1 numFrames]', [Fbeg Fbeg]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
-    F = F + Fpert + 10*randn(size(F));
-
-    Zbeg = [800]';
-    Zbw = [100]';
-    Zpert = 10*repmat(cos(2*pi*4*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
-    Z = interp1([1 numFrames]', [Zbeg Zbeg]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
-    Z = Z + Zpert + 10*randn(size(Z));
-end
+%     Zbeg = [800]';
+%     Zpert = 100*repmat(cos(2*pi*7*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
+%     Z = interp1([1 numFrames]', [Zbeg Zbeg]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
+%     Z = Z + Zpert + 10*randn(size(Z));
+% 
+%     Zbwbeg = [100]';
+%     Zbwpert = 10*repmat(cos(2*pi*6*[0:numFrames-1]/numFrames*dur), size(Zbwbeg, 1), 1);
+%     Zbw = interp1([1 numFrames]', [Zbwbeg Zbwbeg]', 1:numFrames)'; if length(Zbwbeg) == 1, Zbw=Zbw'; end;
+%     Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
 
 % F = []'; Fbw = []';
-% Z = []'; Zbw = []';
+Z = []'; Zbw = []';
 
 %% initial state
 if ~isempty(F) && ~isempty(Z)
@@ -142,7 +134,7 @@ if isempty(F) && ~isempty(Z)
 end
 
 %%
-numTrials = 10;
+numTrials = 20;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials, 1);
 

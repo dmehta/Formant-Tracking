@@ -85,10 +85,10 @@ display(['Reading data from WAV file ' dataFileName])
 
 % Analysis parameters
 wType = 'hamming'; % Window type
-wLengthMS  = 40;   % Length of window (in milliseconds)
+wLengthMS  = 25;   % Length of window (in milliseconds)
 wOverlap = 0.5;    % Factor of overlap of window
-lpcOrder = 12;     % Number of LPC Coefficients
-zOrder = 4;        % Number of MA coefficients
+lpcOrder = 16;     % Number of LPC Coefficients
+zOrder = 0;        % Number of MA coefficients
 peCoeff  = .9;     % Pre-emphasis factor
 
 % Set sampling rate
