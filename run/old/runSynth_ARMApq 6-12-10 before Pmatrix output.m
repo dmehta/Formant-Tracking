@@ -8,7 +8,6 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % Created:  04/30/2010
 % Modified: 05/01/2010 variable output number
 %           05/09/2010 track bandwidths
-%           06/12/2010 P matrix output
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (col vector), in Hz
@@ -26,12 +25,11 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 %    x0:        initial state of formant trackers [F;Z], in Hz
 % 
 % OUTPUT:
-%    Depends on algFlag. For each algorithm, three outputs generated--
-%       rmse_mean:  average RMSE across all tracks
-%       x_est:      estimated tracks
-%       x_errVar:   covariance matrix of estimated tracks
+%    Depends on algFlag. For each algorithm, two outputs generated--
+%       rmse_mean1: average RMSE across all tracks
+%        x_est1:  estimated tracks
 %       So that if two algorithms run, the following are output:
-%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS]
+%       [rmse_mean1, x_est1, rmse_mean2, x_est2]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
@@ -145,7 +143,7 @@ end
 
 %% Calculate LPCC coefficients in each window
 wType = 'hamming';  % window type
-wLengthMS  = 25;    % Length of window (in milliseconds)
+wLengthMS  = 100;    % Length of window (in milliseconds)
 wOverlap = 0.5;     % Factor of overlap of window
 lpcOrder = length(F)*2;       % Number of LPC coefficients
 zOrder = length(Z)*2;         % Number of MA coefficients
@@ -230,8 +228,7 @@ if algFlag(EKF)
     rmse_mean = mean(rmse(:,countTrack));
     varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKF}; countOut = countOut + 1;
-    
+    %display(['Average EKF RMSE: ' num2str(rmse_mean)]);    
     countTrack = countTrack + 1;     % Increment counter
 end
 
@@ -256,8 +253,7 @@ if algFlag(EKS)
     rmse_mean = mean(rmse(:,countTrack));
     varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKS}; countOut = countOut + 1;
-    
+    %display(['Average EKS RMSE: ' num2str(rmse_mean)]);
     countTrack = countTrack + 1;     % Increment counter
 end
 

@@ -7,13 +7,7 @@ zOrder = 4;
 peCoeff = .9;
 dur = 100e-3; % s
 
-% filename = '../data/DDM_speech/WAV/m.wav';
 filename = '../data/DDM_speech/WAV/n.wav';
-% filename = '../data/DDM_speech/WAV/ng.wav';
-% filename = '../data/DDM_speech/WAV/m_asp.wav';
-% filename = '../data/DDM_speech/WAV/n_asp.wav';
-% filename = '../data/DDM_speech/WAV/ng_asp.wav';
-% filename = '../data/DDM_speech/WAV/an.wav';
 
 %%
 [x, fs_in] = wavread(filename);

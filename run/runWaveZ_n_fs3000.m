@@ -175,7 +175,6 @@ if algFlag(EKF)
     estVar(:,:,:,countTrack) = x_errVarEKF;
     
     varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKF}; countOut = countOut + 1;
 end
 
 % Run Extended Kalman Smoother
@@ -188,7 +187,6 @@ if algFlag(EKS)
     estVar(:,:,:,countTrack) = x_errVarEKS;
     
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKS}; countOut = countOut + 1;
 end
 
 varargout(countOut) = {aParams};

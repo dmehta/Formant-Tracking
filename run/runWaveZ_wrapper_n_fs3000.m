@@ -21,8 +21,8 @@ clear
 cepOrder = 10;
 numFormants = 2;
 numAntiF = 1;
-trackBW = 1;
-dataFileName = '../data/DDM_speech/WAV/ng.wav';
+trackBW = 0;
+dataFileName = '../data/DDM_speech/WAV/n.wav';
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
 %% initial state

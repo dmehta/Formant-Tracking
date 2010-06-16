@@ -17,22 +17,17 @@
 %    x0:        initial state of formant trackers [F;Z], in Hz
 % 
 % OUTPUT:
-%    Depends on algFlag. For each algorithm, three outputs generated--
-%       rmse_mean:  average RMSE across all tracks
-%       x_est:      estimated tracks
-%       x_errVar:   covariance matrix of estimated tracks
-%       So that if two algorithms run, the following are output:
-%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS]
+%    rmse_mean: average RMSE across all tracks
 
 clear 
 
 %% parameters
 F = [500 1000]';
 Fbw = [50 50]';
-Z = []'; Zbw = []';
+Z = [800]'; Zbw = [50]';
 
 dur = .25; % in s
-pNoiseVar = 4;
+pNoiseVar = 50;
 snr_dB = 25;
 cepOrder = 20;
 fs = 10e3;
@@ -47,19 +42,18 @@ else
 end
 
 %%    
-numTrials = 100;
+numTrials = 10;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials, 1);
-x_errVar = cell(numTrials, 1);
 
 for jj = 1:numTrials
-    [rmse(jj), x_est{jj}, x_errVar{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
+    tic
+    [rmse(jj), x_est{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
             cepOrder, fs, trackBW, plot_flag, algFlag, x0);
+    toc
 end
 
 numObs = size(x_est{1}, 2);
-numStates = size(x_est{1}, 1);
-
 if trackBW
     trueState = [repmat(F, 1, numObs); repmat(Fbw, 1, numObs); ...
         repmat(Z, 1, numObs); repmat(Zbw, 1, numObs)];
@@ -80,46 +74,22 @@ title('Estimated EKS trajectories (Formant-blue, Antiformant-red, True-black)')
 
 %% plot frequency vs frame with confidence intervals
 % repackage
-x_estPerFreq = zeros(numTrials, numObs, numStates);
-x_errVarPerFreq = zeros(numTrials, numObs, numStates);
-
-for kk = 1:numStates
+x_estPerFreq = zeros(numTrials, numObs, size(trueState,1));
+for kk = 1:size(trueState,1)
     for jj = 1:numTrials
         x_estPerFreq(jj, :, kk) = x_est{jj}(kk, :);
-        x_errVarPerFreq(jj, :, kk) = x_errVar{jj}(kk, kk, :);
     end
 end
 
-obs = 1:numObs;
-means = zeros(numStates, numObs);
-vOfm = zeros(numStates, numObs);
-mOfv = zeros(numStates, numObs);
-
-figure(42), box off, hold on
-figure(43), box off, hold on
-for kk = 1:numStates
-    figure(42)
-    [L U ave v] = findCI(x_estPerFreq(:,:,kk), 95);
-    fill([obs obs(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-    plot(obs, ave, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-
-    means(kk,:) = ave;
-    vOfm(kk,:) = v;
-    mOfv(kk,:) = mean(x_errVarPerFreq(:,:,kk), 1);
-    
-    figure(43)
-    plot(vOfm(kk,:))
-    plot(mOfv(kk,:), 'r')
+xdata = 1:numObs;
+figure, box off, hold on
+for kk = 1:size(trueState,1)
+    [ydata_lower ydata_upper ydata] = findCI(x_estPerFreq(:,:,kk), 95);
+    fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+    plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
+    xlabel('Frame')
+    ylabel('Frequency (Hz)')
 end
-
-figure(42)
-xlabel('Frame')
-ylabel('Frequency (Hz)')
-
-figure(43)
-xlabel('Frame')
-ylabel('Variance (Hz^2)')
-legend('Variance of means', 'Mean of variances')
 
 %% plot tracks individually in grid style with confidence intervals
 titleCell(1,2) = {'EKS'}; % hard coded for now

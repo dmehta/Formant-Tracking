@@ -2,16 +2,16 @@ clear
 randn('state', 5)
 
 %% parameters
-dur = 2; % in s
+dur = 1; % in s
 snr_dB = 20;
 cepOrder = 20;
 fs = 10e3;
-trackBW = 1;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 wType = 'hanning';  % window type
 wLengthMS  = 100;    % Length of window (in milliseconds)
-wOverlap = 0.5;     % Factor of overlap of window
+wOverlap = 0;     % Factor of overlap of window
 
 %%
 wLength = floor(wLengthMS/1000*fs);
@@ -21,30 +21,26 @@ N = floor(dur*fs);
 N = N - mod(N,wLength);
 numFrames = floor(N/((1-wOverlap)*wLength))-1;
 
-%% trajectory
-Fbeg = [500]';
-Fend = [900]';
-Fpert = 0*repmat(cos(2*pi*8*[0:numFrames-1]/numFrames*dur), size(Fbeg, 1), 1);
-F = interp1([1 numFrames]', [Fbeg Fend]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
-F = F + Fpert + 10*randn(size(F));
+%% sinewave modulated trajectory
+    Fbeg = [500]';
+    Fpert = 75*repmat(cos(2*pi*8*[0:numFrames-1]/numFrames*dur), size(Fbeg, 1), 1);
+    F = interp1([1 numFrames]', [Fbeg Fbeg]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
+    F = F + Fpert + 10*randn(size(F));
 
-Fbwbeg = [100]';
-Fbwend = [100]';
-Fbwpert = 0*repmat(cos(2*pi*10*[0:numFrames-1]/numFrames*dur), size(Fbwbeg, 1), 1);
-Fbw = interp1([1 numFrames]', [Fbwbeg Fbwend]', 1:numFrames)'; if length(Fbwbeg) == 1, Fbw=Fbw'; end;
-Fbw = Fbw + Fbwpert + 10*randn(size(Fbw));
+    Fbwbeg = [100]';
+    Fbwpert = 10*repmat(cos(2*pi*10*[0:numFrames-1]/numFrames*dur), size(Fbwbeg, 1), 1);
+    Fbw = interp1([1 numFrames]', [Fbwbeg Fbwbeg]', 1:numFrames)'; if length(Fbwbeg) == 1, Fbw=Fbw'; end;
+    Fbw = Fbw + Fbwpert + 10*randn(size(Fbw));
 
-Zbeg = [900]';
-Zend = [500]';
-Zpert = 0*repmat(cos(2*pi*7*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
-Z = interp1([1 numFrames]', [Zbeg Zend]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
-Z = Z + Zpert + 10*randn(size(Z));
+    Zbeg = [800]';
+    Zpert = 100*repmat(cos(2*pi*7*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
+    Z = interp1([1 numFrames]', [Zbeg Zbeg]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
+    Z = Z + Zpert + 10*randn(size(Z));
 
-Zbwbeg = [100]';
-Zbwend = [100]';
-Zbwpert = 0*repmat(cos(2*pi*6*[0:numFrames-1]/numFrames*dur), size(Zbwbeg, 1), 1);
-Zbw = interp1([1 numFrames]', [Zbwbeg Zbwend]', 1:numFrames)'; if length(Zbwbeg) == 1, Zbw=Zbw'; end;
-Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
+    Zbwbeg = [100]';
+    Zbwpert = 10*repmat(cos(2*pi*6*[0:numFrames-1]/numFrames*dur), size(Zbwbeg, 1), 1);
+    Zbw = interp1([1 numFrames]', [Zbwbeg Zbwbeg]', 1:numFrames)'; if length(Zbwbeg) == 1, Zbw=Zbw'; end;
+    Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
 
 % F = []'; Fbw = []';
 % Z = []'; Zbw = []';
@@ -52,30 +48,30 @@ Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
 %% initial state
 if ~isempty(F) && ~isempty(Z)
     if trackBW
-        x0 = [F(:, 1); Fbw(:, 1); Z(:, 1); Zbw(:, 1)]+100;
+        x0 = [F(:, 1); Fbw(:, 1); Z(:, 1); Zbw(:, 1)]+0;
     else
-        x0 = [F(:, 1); Z(:, 1)]+100;
+        x0 = [F(:, 1); Z(:, 1)]+0;
     end
 end
 
 if ~isempty(F) && isempty(Z)
     if trackBW
-        x0 = [F(:, 1); Fbw(:, 1)]+100;
+        x0 = [F(:, 1); Fbw(:, 1)]+0;
     else
-        x0 = F(:, 1)+100;
+        x0 = F(:, 1)+0;
     end
 end
 
 if isempty(F) && ~isempty(Z)
     if trackBW
-        x0 = [Z(:, 1); Zbw(:, 1)]+100;
+        x0 = [Z(:, 1); Zbw(:, 1)]+0;
     else
-        x0 = Z(:, 1)+100;
+        x0 = Z(:, 1)+0;
     end
 end
 
 %%
-numTrials = 10;
+numTrials = 20;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials, 1);
 

@@ -18,19 +18,19 @@
 clear 
 
 %% parameters
-cepOrder = 10;
-numFormants = 2;
-numAntiF = 1;
-trackBW = 1;
-dataFileName = '../data/DDM_speech/WAV/ng.wav';
+cepOrder = 20;
+numFormants = 4;
+numAntiF = 0;
+trackBW = 0;
+dataFileName = '../data/DDM_speech/WAV/an.wav';
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
 %% initial state
-initFormant = [213.57115      981.71228]';
-initBW = [40.56219      7.451091]';
+initFormant = [500 1500 2000 2700]';
+initBW = [60 200 200 200]';
 
-initAntiF = [1000]';
-initAntiFBW = [50]';
+initAntiF = []';
+initAntiFBW = []';
 
 %%
 if numFormants && numAntiF
@@ -63,7 +63,7 @@ end
 
 %% Super-impose over a spectrogram
 [x, fs] = wavread(dataFileName);
-x = resample(x,3000,fs,2048);
+x = resample(x,10e3,fs,2048);
 plotSpecTracks2(x, x_est, aParams, numAntiF, trackBW);
 axis tight
 % ylim([0 3000])

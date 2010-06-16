@@ -46,9 +46,9 @@ for ff = 1:numStates
     box off
     hold on;
     for tt = 1:numEst
-        [ydata_lower ydata_upper ydata] = findCI(x_estPerFreq(:,:,ff), 95);
-        fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-        plot(xdata, ydata, char(titleCell(2,tt+1)), 'LineWidth', 1)
+        [L U ave] = findCI(x_estPerFreq(:,:,ff), 95);
+        fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+        plot(xdata, ave, char(titleCell(2,tt+1)), 'LineWidth', 1)
     end
     plot(trueState(ff,:), char(titleCell(2,1)));
     yrange = get(gca, 'YLim');

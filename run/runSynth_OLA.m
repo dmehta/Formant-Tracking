@@ -23,11 +23,12 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 %    x0:        initial states (center frequencies) of formant trackers [(2*numFormants + 2*numAntiformants) x 1], in Hz
 % 
 % OUTPUT:
-%    Depends on algFlag. For each algorithm, two outputs generated--
-%       rmse_mean1: average RMSE across all tracks
-%       x_est1:  estimated tracks
+%    Depends on algFlag. For each algorithm, three outputs generated--
+%       rmse_mean:  average RMSE across all tracks
+%       x_est:      estimated tracks
+%       x_errVar:   covariance matrix of estimated tracks
 %       So that if two algorithms run, the following are output:
-%       [rmse_mean1, x_est1, rmse_mean2, x_est2]
+%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
@@ -51,8 +52,8 @@ num_all = cell(N, 1);
 denom_all = cell(N, 1);
 
 wType = 'hanning';  % window type
-wLengthMS  = 20;    % Length of window (in milliseconds)
-wOverlap = 0;     % Factor of overlap of window
+wLengthMS  = 100;    % Length of window (in milliseconds)
+wOverlap = 0.5;     % Factor of overlap of window
 wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
@@ -110,8 +111,8 @@ x = x./(windows+eps); % divide out window effect
 % ANALYSIS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 wType = 'hanning'; % window type
-wLengthMS  = 20; % Length of window (in milliseconds)
-wOverlap = 0; % Factor of overlap of window
+wLengthMS  = 100; % Length of window (in milliseconds)
+wOverlap = 0.5; % Factor of overlap of window
 lpcOrder = size(F, 1)*2; % Number of LPC coefficients
 zOrder = size(Z, 1)*2; % Number of MA coefficients
 peCoeff = 0; % Pre-emphasis factor
@@ -120,7 +121,6 @@ wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
 
-% y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num_all, denom_all);
 y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
 
 %% Do a plot of the LPCCC observations
@@ -193,7 +193,8 @@ if algFlag(EKF)
     rmse_mean = mean(rmse(:,countTrack));
     varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
-    %display(['Average EKF RMSE: ' num2str(rmse_mean)]);    
+    varargout(countOut) = {x_errVarEKF}; countOut = countOut + 1;
+    
     countTrack = countTrack + 1;     % Increment counter
 end
 
@@ -218,7 +219,8 @@ if algFlag(EKS)
     rmse_mean = mean(rmse(:,countTrack));
     varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
-    %display(['Average EKS RMSE: ' num2str(rmse_mean)]);
+    varargout(countOut) = {x_errVarEKS}; countOut = countOut + 1;
+    
     countTrack = countTrack + 1;     % Increment counter
 end
 

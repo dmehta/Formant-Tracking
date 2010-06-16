@@ -36,7 +36,7 @@ pNoiseVar = 4;
 snr_dB = 25;
 cepOrder = 20;
 fs = 10e3;
-trackBW = 1;
+trackBW = 0;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 
@@ -47,7 +47,7 @@ else
 end
 
 %%    
-numTrials = 100;
+numTrials = 1000;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials, 1);
 x_errVar = cell(numTrials, 1);
