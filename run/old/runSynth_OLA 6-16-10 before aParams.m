@@ -1,4 +1,4 @@
-function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams, sParams)
+function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
 
 % Track formants and anti-formants (no bandwidths) on synthetic data
 % that constructs a waveform using overlap-add of windows generated from an
@@ -7,7 +7,6 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 % Author: Daryush Mehta
 % Created:  05/09/2010
 % Modified: 05/17/2010 (bandwidth contours)
-%           06/16/2010 (analysis parameters on input, x output)
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (numFormants x numFrames), in Hz
@@ -22,30 +21,23 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
 %    x0:        initial states (center frequencies) of formant trackers [(2*numFormants + 2*numAntiformants) x 1], in Hz
-%    aParams:   structure with following fields:
-%                     wType       % window type
-%                     wLengthMS   % Length of window (in milliseconds)
-%                     wOverlap    % Factor of overlap of window
-%                     lpcOrder    % Number of AR coefficients
-%                     zOrder      % Number of MA coefficients
-%                     peCoeff     % Pre-emphasis factor
-%    aParams:   structure with following fields:
-%                     wType       % window type
-%                     wLengthMS   % Length of window (in milliseconds)
-%                     wOverlap    % Factor of overlap of window
 % 
 % OUTPUT:
-%    Depends on algFlag. For each algorithm, three outputs then waveform--
+%    Depends on algFlag. For each algorithm, three outputs generated--
 %       rmse_mean:  average RMSE across all tracks
 %       x_est:      estimated tracks
 %       x_errVar:   covariance matrix of estimated tracks
 %       So that if two algorithms run, the following are output:
-%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS, x]
+%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
 % Synthetic Examples:
 %   see runSynth_OLA_wrapper.m
+%
+% The usual examples from PRAAT and Wavesurfer are not included, because
+% it is not clear how to generate paths of zeros along with the paths of
+% formants that are available.
 
 addpath(genpath('../')); % Paths
 rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
@@ -59,10 +51,9 @@ windows = zeros(N, 1);
 num_all = cell(N, 1);
 denom_all = cell(N, 1);
 
-wType       = sParams.wType;     % Window type
-wLengthMS   = sParams.wLengthMS; % Length of window (in milliseconds)
-wOverlap    = sParams.wOverlap;  % Factor of overlap of window
-
+wType = 'hanning';  % window type
+wLengthMS  = 100;    % Length of window (in milliseconds)
+wOverlap = 0.5;     % Factor of overlap of window
 wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
@@ -119,13 +110,12 @@ x = x./(windows+eps); % divide out window effect
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ANALYSIS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Calculate LPCC coefficients in each window
-wType       = aParams.wType;     % Window type
-wLengthMS   = aParams.wLengthMS; % Length of window (in milliseconds)
-wOverlap    = aParams.wOverlap;  % Factor of overlap of window
-lpcOrder    = aParams.lpcOrder;  % Number of AR Coefficients
-zOrder      = aParams.zOrder;    % Number of MA Coefficients
-peCoeff     = aParams.peCoeff;   % Pre-emphasis factor
+wType = 'hanning'; % window type
+wLengthMS  = 100; % Length of window (in milliseconds)
+wOverlap = 0.5; % Factor of overlap of window
+lpcOrder = size(F, 1)*2; % Number of LPC coefficients
+zOrder = size(Z, 1)*2; % Number of MA coefficients
+peCoeff = 0; % Pre-emphasis factor
 
 wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
@@ -233,8 +223,6 @@ if algFlag(EKS)
     
     countTrack = countTrack + 1;     % Increment counter
 end
-
-varargout(countOut) = {x}; countOut = countOut + 1;
 
 if plot_flag
     %% Initial Plotting Variables

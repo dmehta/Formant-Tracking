@@ -12,9 +12,9 @@ function [] = runVTRReplicate(cepOrder, fs_in, numFormants, trackBW, vtrDbNum)
 % trackBW   :   Attempt to track bandwidths (1) or not (0)
 % vtrDbNum  :   Which file number (1-516) in the VTR database?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Example Usage
-% runVTR(15, 16000, 3, 1, 11);
-% runVTR(15, 16000, 4, 0, 210);
+% Example Usage (do NOT track bandwidths here)
+% runVTRReplicate(15, 16000, 3, 0, 11);
+% runVTRReplicate(15, 16000, 4, 0, 210);
 % Interesting examples 200, 210
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -156,7 +156,8 @@ if (trackBW)
 else
     % Currently is estimated from the loaded data from Wavesurfer
     Qscale = 1; % For experiments scaling this value
-    Q = diag(var(trueStateWS(:,formantInds(:,1)==1),0,2))/Qscale;
+    % Q = diag(var(trueStateWS(:,formantInds(:,1)==1),0,2))/Qscale;
+    Q = eye(numFormants)*var(trueStateWS(formantInds'==1)); % to match Interspeech 2007 code in MyTrackExp.m
 end
 
 %%% Set measurement noise covariance matrix R %%%%
@@ -233,7 +234,7 @@ end
 if algFlag(EKS)
     smooth = 1;
     %Q = 1.0458e+006*eye(numFormants);
-    Q = 8.0244e+005*eye(numFormants);
+    %Q = 8.0244e+005*eye(numFormants);
     [x_estEKS x_errVarEKS] = formantTrackEKS(y, F, Q, R, x0, formantInds, fs, bwStates, smooth);
       
     % Track estimate into data cube for plot routines

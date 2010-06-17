@@ -1,12 +1,6 @@
-%%
-clear 
+%% parameters
 
-fs = 10000; % Hz
-pOrder = 24;
-zOrder = 4;
-peCoeff = .9;
-dur = 100e-3; % s
-
+% WAV file to analyze
 % filename = '../data/DDM_speech/WAV/m.wav';
 filename = '../data/DDM_speech/WAV/n.wav';
 % filename = '../data/DDM_speech/WAV/ng.wav';
@@ -14,6 +8,13 @@ filename = '../data/DDM_speech/WAV/n.wav';
 % filename = '../data/DDM_speech/WAV/n_asp.wav';
 % filename = '../data/DDM_speech/WAV/ng_asp.wav';
 % filename = '../data/DDM_speech/WAV/an.wav';
+
+% analysis parameters
+fs = 10000; % sampling rate (in Hz) to resample to
+pOrder = 24;
+zOrder = 4;
+peCoeff = .9;
+dur = 50e-3; % window duration, in s
 
 %%
 [x, fs_in] = wavread(filename);

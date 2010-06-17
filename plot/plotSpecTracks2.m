@@ -7,7 +7,7 @@ wLength = aParams.wLength;
 wOverlap = aParams.wOverlap;
 
 % Spectrogram Code
-winlen = floor(fs/1000*25);  % 8 ms to make plots clear...changed to 25 ms, 6/7/10
+winlen = floor(fs/1000*8);  % 8 ms to make plots clear
 winlen = winlen + (mod(winlen,2)~=0); % force even
 winoverlap = winlen/2; % 50pct overlap
 

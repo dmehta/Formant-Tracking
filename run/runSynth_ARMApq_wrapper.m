@@ -1,60 +1,53 @@
-%% runSynth_ARMApq_wrapper.m
-% set parameters for runSynth_ARMApq.m
-% 
-% INPUT:
-%    F:         center frequencies of the resonances (col vector), in Hz
-%    Fbw:       corresponding bandwidths of the resonances (col vector), in Hz
-%    Z:         center frequencies of the anti-resonances (col vector), in Hz
-%    Zbw:       corresponding bandwidths of the anti-resonances (col vector), in Hz
-%    dur:       duration of signal, in s
-%    pNoiseVar: process noise variance
-%    snr_dB:    observation noise, in dB
-%    cepOrder:  Number of cepstal coefficients to compute
-%    fs:        sampling rate of waveform, in Hz
-%    trackBW:   track bandwidths if 1
-%    plot_flag: plot figures if 1
-%    algFlag:   select 1 to run, 0 not to for [EKF EKS]
-%    x0:        initial state of formant trackers [F;Z], in Hz
-% 
-% OUTPUT:
-%    Depends on algFlag. For each algorithm, three outputs generated--
-%       rmse_mean:  average RMSE across all tracks
-%       x_est:      estimated tracks
-%       x_errVar:   covariance matrix of estimated tracks
-%       So that if two algorithms run, the following are output:
-%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS]
-
-clear 
-
 %% parameters
-F = [500 1000]';
-Fbw = [50 50]';
-Z = []'; Zbw = []';
 
+% time-invariant formant center frequency (F) and bandwidth (Fbw) and
+% anti-formant center frequency (Z) and bandwidth (Zbw)
+F = [500 1000]'; % in Hz
+Fbw = [50 50]'; % in Hz
+Z = [2000]'; Zbw = [50]'; % in Hz
+
+% synthesis parameters
 dur = .25; % in s
-pNoiseVar = 4;
+fs = 10e3; % in Hz
+
+% analysis parameters
+aParams.wType = 'hamming';      % window type
+aParams.wLengthMS = 25;         % Length of window (in milliseconds)
+aParams.wOverlap = 0.5;         % Factor of overlap of window
+aParams.lpcOrder = length(F)*2; % Number of AR coefficients
+aParams.zOrder = length(Z)*2;   % Number of MA coefficients
+aParams.peCoeff = 0;            % Pre-emphasis factor (0.9, 0.7, etc.)
+aParams.fs = fs;                % sampling rate (in Hz)
+
+% tracker parameters
+pNoiseVar = 100;
 snr_dB = 25;
 cepOrder = 20;
-fs = 10e3;
-trackBW = 1;
-plot_flag = 0;
+trackBW = 0;
+plot_flag = 0; % plot transfer functions
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
+offset = 0; % set initial state offset, in Hz)
 
+% Monte Carlo analysis parameters
+numTrials = 1;
+trial = 1; % pick a trial for which plot spectrogram
+
+%% synthesize and track
 if trackBW
-    x0 = [F; Fbw; Z; Zbw];
+    x0 = [F; Fbw; Z; Zbw]+offset;
 else
-    x0 = [F; Z];
+    x0 = [F; Z]+offset;
 end
 
-%%    
-numTrials = 100;
 rmse = zeros(numTrials, 1);
 x_est = cell(numTrials, 1);
 x_errVar = cell(numTrials, 1);
+x = cell(numTrials, 1);
 
 for jj = 1:numTrials
-    [rmse(jj), x_est{jj}, x_errVar{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
-            cepOrder, fs, trackBW, plot_flag, algFlag, x0);
+    disp(['Processing Trial #', num2str(jj), '...'])
+    [rmse(jj), x_est{jj}, x_errVar{jj}, x{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams);
 end
 
 numObs = size(x_est{1}, 2);
@@ -67,60 +60,6 @@ else
     trueState = repmat([F; Z], 1, numObs);
 end
 
-%% plot all simulations against truth
-figure, hold on
-for jj = 1:numTrials
-    plot(x_est{jj}(1:size(F,1), :)', 'b')
-    plot(x_est{jj}(size(F,1)+1:end, :)', 'r')
-end
-plot(trueState', 'LineWidth', 3, 'Color', 'k')
-xlabel('Frame')
-ylabel('Frequency (Hz)')
-title('Estimated EKS trajectories (Formant-blue, Antiformant-red, True-black)')
-
-%% plot frequency vs frame with confidence intervals
-% repackage
-x_estPerFreq = zeros(numTrials, numObs, numStates);
-x_errVarPerFreq = zeros(numTrials, numObs, numStates);
-
-for kk = 1:numStates
-    for jj = 1:numTrials
-        x_estPerFreq(jj, :, kk) = x_est{jj}(kk, :);
-        x_errVarPerFreq(jj, :, kk) = x_errVar{jj}(kk, kk, :);
-    end
-end
-
-obs = 1:numObs;
-means = zeros(numStates, numObs);
-vOfm = zeros(numStates, numObs);
-mOfv = zeros(numStates, numObs);
-
-figure(42), box off, hold on
-figure(43), box off, hold on
-for kk = 1:numStates
-    figure(42)
-    [L U ave v] = findCI(x_estPerFreq(:,:,kk), 95);
-    fill([obs obs(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-    plot(obs, ave, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-
-    means(kk,:) = ave;
-    vOfm(kk,:) = v;
-    mOfv(kk,:) = mean(x_errVarPerFreq(:,:,kk), 1);
-    
-    figure(43)
-    plot(vOfm(kk,:))
-    plot(mOfv(kk,:), 'r')
-end
-
-figure(42)
-xlabel('Frame')
-ylabel('Frequency (Hz)')
-
-figure(43)
-xlabel('Frame')
-ylabel('Variance (Hz^2)')
-legend('Variance of means', 'Mean of variances')
-
 %% plot tracks individually in grid style with confidence intervals
 titleCell(1,2) = {'EKS'}; % hard coded for now
 titleCell(2,2) = {'b:'};
@@ -131,3 +70,59 @@ nP = size(F,1);
 plotStateTracksFZ_CI(trueState,x_est,titleCell(:,[1 2]), nP, trackBW);
 
 disp(['Mean RMSE: ', num2str(mean(rmse))])
+
+%% Super-impose over a spectrogram
+nZ = size(Z,1);
+aParams.wLength = floor(aParams.wLengthMS/1000*aParams.fs);
+aParams.wLength = aParams.wLength + (mod(aParams.wLength,2)~=0); % Force even
+
+plotSpecTracks2(x{trial}, x_est{trial}, aParams, nZ, trackBW);
+firstline = get(get(gca,'Title'),'String');
+title({['Trial #', num2str(trial)]; firstline})
+axis tight
+
+%% COMMENTED OUT FOR NOW plot frequency vs frame with confidence intervals
+% % repackage
+% x_estPerFreq = zeros(numTrials, numObs, numStates);
+% x_errVarPerFreq = zeros(numTrials, numObs, numStates);
+% 
+% for kk = 1:numStates
+%     for jj = 1:numTrials
+%         x_estPerFreq(jj, :, kk) = x_est{jj}(kk, :);
+%         x_errVarPerFreq(jj, :, kk) = x_errVar{jj}(kk, kk, :);
+%     end
+% end
+% 
+% obs = 1:numObs;
+% means = zeros(numStates, numObs);
+% vOfm = zeros(numStates, numObs);
+% mOfv = zeros(numStates, numObs);
+% 
+% figure(42), box off, hold on
+% figure(43), box off, hold on
+% 
+% for kk = 1:numStates
+%     figure(42)
+%     [L U ave v] = findCI(x_estPerFreq(:,:,kk), 95);
+%     fill([obs obs(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+%     plot(obs, ave, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
+% 
+%     means(kk,:) = ave;
+%     vOfm(kk,:) = v;
+%     mOfv(kk,:) = mean(x_errVarPerFreq(:,:,kk), 1);
+%     
+%     figure(43)
+%     plot(vOfm(kk,:))
+%     plot(mOfv(kk,:), 'r')
+% end
+% 
+% figure(42)
+% title('Tracks with 95 % CI')
+% xlabel('Frame')
+% ylabel('Frequency (Hz)')
+% 
+% figure(43)
+% title('Comparison of confidence interval and KF covariances')
+% xlabel('Frame')
+% ylabel('Variance (Hz^2)')
+% legend('Variance of means', 'Mean of variances')
