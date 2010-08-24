@@ -24,7 +24,7 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 %    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
-%    x0:        initial state of formant trackers [F;Z], in Hz
+%    x0:        initial state of formant trackers [F; Fbw; Z; Zbw], in Hz
 %    aParams:   structure with following fields:
 %                     wType       % window type
 %                     wLengthMS   % Length of window (in milliseconds)
@@ -164,7 +164,10 @@ win = feval(wType,wLength);
 
 % uncomment next line to input truth
 % y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num, denom);
-y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
+c = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
+
+% observation noise added given SNR in input
+[y, oNoiseVar] = addONoise(c, snr_dB);
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -200,9 +203,7 @@ Fmatrix = eye(stateLen);
 % process noise is input parameter
 Q = diag(pNoiseVar*ones(stateLen,1));
 
-% observation noise added given SNR in input
-[y, oNoiseVar] = addONoise(y, snr_dB);
-R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
+R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R perfectly matches added noise
 
 % A voice activity detector is not used here in the synthetic case
 formantInds = ones(stateLen,numObs);

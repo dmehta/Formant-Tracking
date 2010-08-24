@@ -120,21 +120,9 @@ if trackBW
     x0 = [x0(1:numFormants); bwStates(1:numFormants); ...
         x0(numFormants+1:numFormants+numAntiF); bwStates(numFormants+1:numFormants+numAntiF)];
     bwStates = []; % If we are tracking bandwidths do not provide them
-
-    % Process noise covariance matrix Q
-    Q = zeros(size(x0));
-    %Q = 100^2*eye(stateLen); %%% NEED BETTER ESTIMATION
-    Q(1:numFormants) = 1000^2;
-    Q(numFormants+1:numFormants*2) = 100^2;
-    Q(2*numFormants+1:2*numFormants+numAntiF) = 1000^2;
-    Q(2*numFormants+numAntiF+1:end) = 100^2;
-    Q = diag(Q);
 else
     stateLen = numFormants + numAntiF;
     bwStates = repmat(bwStates, 1, numObs);
-    
-    % Process noise covariance matrix Q
-    Q = diag(ones(stateLen,1)*1000^2);
 end
 
 % A voice activity detector is not used here yet
@@ -143,6 +131,9 @@ formantInds = ones(stateLen, numObs);
 
 % Process Matrix F, Correlation is not being tested here
 Fmatrix = eye(stateLen);
+
+% Process noise covariance matrix Q
+Q = 100^2*eye(stateLen); %%% NEED BETTER ESTIMATION
 
 % Measurement noise covariance matrix R
 % Set/choose estimated observation noise variance, which should decrease

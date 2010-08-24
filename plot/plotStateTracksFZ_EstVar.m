@@ -1,27 +1,27 @@
+% x_est is a cell array, where x_est{ii} is one trials of a 2D matrix
+% of numStates x numFrames
 %
-%
+% Plot estimated formant tracks for poles/zeros and bandwidths with
+% estimator and 95 % confidence interval
+% 
 % Author: Patrick J. Wolfe, Daniel Rudoy, Daryush Mehta
 %
-% Created: 03/13/2007 
-% Modified: 05/09/2010, 08/23/2010 (track bandwidths and zeros, but no CIs)
+% Created: 05/12/2010
+% Modified: 05/12/2010, 06/01/2010 (trackBW and zeroes), 07/14/2010
+% (estimator variance)
 
-function plotStateTracksFZ(trueState,estTracks,titleCell,nP,trackBW)
-% Plot estimated formant tracks for poles/zeros vs. ground truth
+function plotStateTracksFZ_EstVar(x_est,x_errVar,nP,trackBW)
 
 % Number of track estimates
-numEst = size(estTracks,3);
-numStates = size(trueState,1);
+numStates = size(x_est,1);
+numObs = size(x_est,2);
+xdata = 1:numObs;
 
 if trackBW
     nZ = numStates/2-nP;
 else
     nZ = numStates-nP;
 end
-
-
-%Titles for plot legends
-ii = 1:(numEst+1);
-S = titleCell(1,ii);
 
 m = ceil(sqrt(numStates));
 n = ceil(numStates/m);
@@ -32,10 +32,13 @@ for ff = 1:numStates
     %grid on;
     box off
     hold on;
-    plot(trueState(ff,:), char(titleCell(2,1)));
-    for tt = 1:numEst
-        plot(estTracks(ff,:,tt), char(titleCell(2,tt+1)));
-    end
+    means = x_est(ff,:);
+    plot(means)
+    variances = squeeze(x_errVar(ff,ff,:))';
+    low = means + tinv(0.5-95/100/2, length(means)-1)*sqrt(variances)/sqrt(length(means));
+    high = means + tinv(0.5+95/100/2, length(means)-1)*sqrt(variances)/sqrt(length(means));
+    fill([xdata xdata(end:-1:1)], [low high(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+    plot(xdata, means, 'LineWidth', 1)
     yrange = get(gca, 'YLim');
     yrangemax = max(yrangemax, yrange(2)-yrange(1));
     
@@ -76,7 +79,6 @@ for ff = 1:numStates
     end
     
     if ff==1
-        legend(S{1},S{2});
         xlabel('Time Block');
         ylabel('Frequency (Hz)');
     end

@@ -140,7 +140,7 @@ formantInds = ones(numObs,numFormants);
 
 % General Settings
 % Decision Flags for Tracking Processes, and parameters
-algFlag = [1 0 0 0 0]; % Select 1 to run, 0 not to
+algFlag = [0 1 0 0 0]; % Select 1 to run, 0 not to
 EKF = 1; EKS = 2; EKS_EM = 3; PF = 4; RBPF = 5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

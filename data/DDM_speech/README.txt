@@ -60,3 +60,9 @@ enge
 ingi
 ongo
 ungu
+
+a(nasal a)n(nasal a)a
+e(nasal e)n(nasal e)e
+i(nasal i)n(nasal i)i
+o(nasal o)n(nasal o)o
+u(nasal u)n(nasal u)u

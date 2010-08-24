@@ -1,7 +1,8 @@
 function [frmVals, bwVals] = genSynthFormantTracks(pNoiseVar, numObser, frmVals0, bwVals0)
 
 % Starting from initial formant states generate a synthetic formant track
-% via a Normal random walk with variance given by pNoiseVar
+% via a Normal random walk with variance given by pNoiseVar; N.B. variance of bandwidth
+% tracks scaled by 1/25
 
 % Author: Daniel Rudoy 
 % Created : March 2007

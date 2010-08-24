@@ -1,19 +1,19 @@
 %% parameters
 
 % WAV file to analyze
-% filename = '../data/DDM_speech/WAV/m.wav';
-filename = '../data/DDM_speech/WAV/n.wav';
-% filename = '../data/DDM_speech/WAV/ng.wav';
-% filename = '../data/DDM_speech/WAV/m_asp.wav';
-% filename = '../data/DDM_speech/WAV/n_asp.wav';
-% filename = '../data/DDM_speech/WAV/ng_asp.wav';
-% filename = '../data/DDM_speech/WAV/an.wav';
+% filename = '../data/DDM_speech/m.wav';
+filename = '../data/DDM_speech/n.wav';
+% filename = '../data/DDM_speech/ng.wav';
+% filename = '../data/DDM_speech/m_asp.wav';
+% filename = '../data/DDM_speech/n_asp.wav';
+% filename = '../data/DDM_speech/ng_asp.wav';
+% filename = '../data/DDM_speech/an.wav';
 
 % analysis parameters
-fs = 10000; % sampling rate (in Hz) to resample to
-pOrder = 24;
-zOrder = 4;
-peCoeff = .9;
+fs = 8000; % sampling rate (in Hz) to resample to
+pOrder = 16;
+zOrder = 12;
+peCoeff = 0;
 dur = 50e-3; % window duration, in s
 
 %%
@@ -51,9 +51,9 @@ plot(freq, 20*log10(abs(spec))-25, 'k', 'LineWidth', 2)
 [spec, freq] = freqz(m.c, m.a, fftlen, fs);
 plot(freq, 20*log10(abs(spec))-25, 'r', 'LineWidth', 2)
 
-ylim([-60 20])
+ylim([-60 40])
 title('Power spectrum');
-xlabel('Frequency (Hz)'); ylabel('Power(dB)');
+xlabel('Frequency (Hz)'); ylabel('Power (dB)');
 legend('Data spectrum', 'AR', 'ARMA')
 
 %% frequencies of zeros and poles
@@ -68,7 +68,7 @@ p(ii) = [];
 p = p(1:2:end);
 
 F = angle(p)/(2*pi)*fs;
-FBW = -log(abs(p))*fs/pi; % needs to be CHANGED IN FORMANTS.PDF, add negative sign in (1)
+FBW = -log(abs(p))*fs/pi;
 ii = find(FBW < 300);
 F = F(ii);
 FBW = FBW(ii);
@@ -76,7 +76,7 @@ FBW = FBW(ii);
 FBW = FBW(jj);
 
 antiF = angle(z)/(2*pi)*fs;
-antiFBW = -log(abs(z))*fs/pi; % needs to be CHANGED IN FORMANTS.PDF, add negative sign in (1)
+antiFBW = -log(abs(z))*fs/pi;
 ii = find(antiFBW < 300);
 antiF = antiF(ii);
 antiFBW = antiFBW(ii);

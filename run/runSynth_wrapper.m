@@ -19,16 +19,21 @@
 
 %% scenario 1
 testMethod = 'Synth';
-snr_dB = 100;
-cepOrder = 15;
+snr_dB = 105;
+cepOrder = 25;
 fs = 16e3;
-numFormants = 4;
+numFormants = 2;
 trackBW = 1;
 numParticles = [];
-N = 30;
-pNoiseVar = 100;
 doPlots = 1;
-
-rmse = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackBW, numParticles, doPlots, N, pNoiseVar);
+N = 30;
+pNoiseVar = 1000;
 
 %%
+rmse = runSynth(testMethod, snr_dB, cepOrder, fs, numFormants, trackBW, numParticles, doPlots, N, pNoiseVar);
+
+%% Dan's Fig. 3.5
+runSynth('WS', 15, 15, 10000, 3, 1, [], 1, '../data/synthData/ln.roy.10k.FRM');
+
+%%
+runSynth('Synth',105, 15, 16000, 2, 1, [], 1, 30, 1000);

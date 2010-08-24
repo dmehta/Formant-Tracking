@@ -17,4 +17,4 @@ function [f,bw] = wavesurferFormantRead(fname,numFormants)
 data = load(fname);
 f = data(:,1:numFormants)';
 %bw = data(:,(numFormants+1):end)';
-bw = data(:,5:1:5+numFormants-1)';
+bw = data(:,end/2+1:end/2+1+numFormants-1)';

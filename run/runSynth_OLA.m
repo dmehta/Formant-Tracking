@@ -29,7 +29,7 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 %                     lpcOrder    % Number of AR coefficients
 %                     zOrder      % Number of MA coefficients
 %                     peCoeff     % Pre-emphasis factor
-%    aParams:   structure with following fields:
+%    sParams:   structure with following fields:
 %                     wType       % window type
 %                     wLengthMS   % Length of window (in milliseconds)
 %                     wOverlap    % Factor of overlap of window
@@ -131,7 +131,10 @@ wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
 
-y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
+c = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder); % ARMA cepstrum
+
+% observation noise added given SNR in input
+[y, oNoiseVar] = addONoise(c, snr_dB); % noise added to ARMA cepstrum
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -166,9 +169,7 @@ Fmatrix = eye(stateLen);
 Q = diag(var(trueState(:,2:end)-trueState(:,1:end-1),0,2)+eps);
 % Q = Q.*diag([1 1 100 100 1 100]);
 
-% observation noise added given SNR in input
-[y, oNoiseVar] = addONoise(y, snr_dB);
-R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
+R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R perfectly matches added noise
 
 % A voice activity detector is not used here in the synthetic case
 formantInds = ones(stateLen, numObs);
