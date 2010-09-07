@@ -41,45 +41,47 @@ for ff = 1:numStates
     
     if ~nZ
         if ~trackBW
-            title(['Resonance ' int2str(ff)]);
+            title(['Formant ' int2str(ff)]);
         else
             if ff > nP
-                title(['Bandwidth ' int2str(ff-nP)]);
+                title(['Formant BW ' int2str(ff-nP)]);
             else
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end            
         end
     else% zeros also
         if ~trackBW
             if ff > nP
-                title(['Anti-resonance ' int2str(ff-nP)]);
+                title(['Anti-formant ' int2str(ff-nP)]);
             else
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end
         else
             if ff <= nP
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end
 
             if ff > nP && ff <= 2*nP
-                title(['Resonance BW ' int2str(ff-nP)]);
+                title(['Formant BW ' int2str(ff-nP)]);
             end
 
             if ff > 2*nP && ff <= (2*nP + nZ)
-                title(['Anti-resonance ' int2str(ff-2*nP)]);
+                title(['Anti-formant ' int2str(ff-2*nP)]);
             end
             
             if ff > (2*nP + nZ) && ff <= (2*nP + 2*nZ)
-                title(['Anti-resonance BW ' int2str(ff-2*nP-nZ)]);
+                title(['Anti-formant BW ' int2str(ff-2*nP-nZ)]);
             end
         end
     end
     
     if ff==1
         legend(S{1},S{2});
-        xlabel('Time Block');
+        xlabel('Frame number');
         ylabel('Frequency (Hz)');
     end
+    
+    format_plot
 end
 
 for ff = 1:numStates

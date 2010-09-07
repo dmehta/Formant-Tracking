@@ -2,8 +2,8 @@
 
 % WAV file to analyze
 % dataFileName = '../data/DDM_speech/n.wav';
-% dataFileName = '../data/DDM_speech/ana.wav';
-dataFileName = '../data/synthData/ln.roy.10k.wav';
+dataFileName = '../data/DDM_speech/ana.wav';
+% dataFileName = '../data/synthData/ln.roy.10k.wav';
 % dataFileName = '../data/synthData/tfq.roy.10k.wav';
 
 % analysis parameters
@@ -49,7 +49,7 @@ set(gca, 'PlotBoxAspectRatio', [3 1 1])
 
 mean(x_est,2)
 
-%%
+%% tracks with estimated variance
 plotStateTracksFZ_EstVar(x_est,x_errVar,numFormants,trackBW)
 
 %% Wavesurfer tracks on spectrogram

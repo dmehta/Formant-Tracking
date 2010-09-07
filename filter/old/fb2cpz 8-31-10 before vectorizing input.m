@@ -6,16 +6,11 @@ function cepCoeffs = fb2cpz(F, Fbw, Z, Zbw, cepOrder, fs)
 % negative sign in exp() [fb2cp.m]. Handles no zeros or no poles.
 %
 % INPUT
-%   F - center frequencies of resonances, Hz ([] if none), 
-%       numFormants x numObs
-%   Fbw - bandwidths of resonances, Hz ([] if none),
-%       numFormants x numObs
-%   Z - center frequencies of anti-resonances, Hz ([] if none),
-%       numAntiformants x numObs
-%   Zbw - bandwidths of anti-resonances, Hz ([] if none),
-%       numAntiformants x numObs
-%   cepOrder - Number of Cepstral Coefficients to use,
-%       cepOrder x numObs
+%   F - center frequencies of resonances, Hz ([] if none)
+%   Fbw - bandwidths of resonances, Hz ([] if none)
+%   Z - center frequencies of anti-resonances, Hz ([] if none)
+%   Zbw - bandwidths of anti-resonances, Hz ([] if none)
+%   cepOrder - Number of Cepstral Coefficients to use
 %   fs - sampling rate, Hz
 %
 % OUTPUT

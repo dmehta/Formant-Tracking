@@ -1,22 +1,24 @@
 % x_est is a cell array, where x_est{ii} is one trials of a 2D matrix
 % of numStates x numFrames
 %
+% Plot estimated formant tracks for poles/zeros and bandwidths with
+% estimator and posterior interval as plus/minus one standard deviation
+% around point estimates. With truth tracks as well (this function is good
+% when using generative models)
+% 
 % Author: Patrick J. Wolfe, Daniel Rudoy, Daryush Mehta
 %
 % Created: 05/12/2010
-% Modified: 05/12/2010, 06/01/2010 (trackBW and zeroes)
+% Modified: 05/12/2010, 06/01/2010 (trackBW and zeroes), 07/14/2010
+% (estimator variance as 95 % interval), 08/26/2010 (estimator variance as stdev, truth)
 
-function plotStateTracksFZ_CI(trueState,x_est,titleCell,nP,trackBW)
-% Plot estimated formant tracks for poles/zeros and bandwidths vs. ground truth with
-% X % confidence interval around mean
-
-CI = 68; % for plus/minus 1 standard deviation
+function plotStateTracksFZ_EstVar_Truth(trueState,x_est,x_errVar,titleCell,nP,trackBW)
 
 % Number of track estimates
-numEst = size(x_est,2);
+numEst = size(x_est,3);
 numStates = size(trueState,1);
-numObs = size(trueState,2);
-numTrials = length(x_est);
+numObs = size(x_est,2);
+xdata = 1:numObs;
 
 if trackBW
     nZ = numStates/2-nP;
@@ -24,19 +26,9 @@ else
     nZ = numStates-nP;
 end
 
-% repackage into 3D matrix of numTrials x numFrames x numStates
-x_estPerFreq = zeros(numTrials, numObs, size(trueState,1));
-for kk = 1:size(trueState,1)
-    for jj = 1:numTrials
-        x_estPerFreq(jj, :, kk) = x_est{jj}(kk, :);
-    end
-end
-
 %Titles for plot legends
 ii = 1:(numEst+1);
 S = titleCell(1,ii);
-
-xdata = 1:numObs;
 
 m = ceil(sqrt(numStates));
 n = ceil(numStates/m);
@@ -47,11 +39,12 @@ for ff = 1:numStates
     %grid on;
     box off
     hold on;
-    for tt = 1:numEst
-        [L U ave] = findCI(x_estPerFreq(:,:,ff), CI);
-        fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-        plot(xdata, ave, char(titleCell(2,tt+1)), 'LineWidth', 1)
-    end
+    means = x_est(ff,:);
+    variances = squeeze(x_errVar(ff,ff,:))';
+    low = means + sqrt(variances);
+    high = means - sqrt(variances);
+    fill([xdata xdata(end:-1:1)], [low high(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
+    plot(xdata, means, char(titleCell(2,2)), 'LineWidth', 1)
     plot(trueState(ff,:), char(titleCell(2,1)));
     yrange = get(gca, 'YLim');
     yrangemax = max(yrangemax, yrange(2)-yrange(1));

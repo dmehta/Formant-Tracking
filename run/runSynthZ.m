@@ -1,4 +1,4 @@
-function varargout = runSynthZ(F, Fbw, Z, Zbw, N, pNoiseVar, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams)
+function varargout = runSynthZ(F, Fbw, Z, Zbw, N, pNoiseVar, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0)
 
 % Track poles and zeros (with bandwidths) on synthetic data
 % Model-based synthesis, so no speech-like waveform available
@@ -6,6 +6,12 @@ function varargout = runSynthZ(F, Fbw, Z, Zbw, N, pNoiseVar, snr_dB, cepOrder, f
 % Created:  12/13/2007
 % Modified: 12/13/2007, 02/15/2010, 03/21/2010
 % Modified: 08/23/2010 DDM: track bandwidths, P matrix output
+% Modified: 08/25/2010 DDM: pNoiseVar, snr_dB, cepOrder each has two values: one for synthesis, other for tracking
+% Modified: 08/31/2010 DDM: aParams deleted as input parameter, trueState
+%                           added as output, observation noise variance for tracker is
+%                           calculated from snr_dB as if we had total
+%                           number of cepstral coefficients, cepOrder(2)
+%                           then truncates that vector
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (col vector), in Hz
@@ -13,26 +19,26 @@ function varargout = runSynthZ(F, Fbw, Z, Zbw, N, pNoiseVar, snr_dB, cepOrder, f
 %    Z:         center frequencies of the anti-resonances (col vector), in Hz
 %    Zbw:       corresponding bandwidths of the anti-resonances (col vector), in Hz
 %    N:         number of observations to generate
-%    pNoiseVar: process noise variance
-%    snr_dB:    observation noise, in dB
-%    cepOrder:  Number of cepstal coefficients to compute
+%    pNoiseVar: process noise variance; first element for synthesis, second
+%                     element for tracking; [100 120]
+%    snr_dB:    observation noise, in dB; first element for synthesis, second
+%                     element for tracking; [15 25]
+%    cepOrder:  Number of cepstal coefficients to compute; first element for synthesis, second
+%                     element for tracking; [15 25]
 %    fs:        sampling rate of waveform, in Hz [no waveform generated but fs used in
 %                     mapping from formant parameters to ARMA cepstrum]
 %    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
 %    x0:        initial state of formant trackers [F; Fbw; Z; Zbw], in Hz
-%    aParams:   structure with following fields:
-%                     lpcOrder    % Number of AR coefficients
-%                     zOrder      % Number of MA coefficients
 % 
 % OUTPUT:
 %    Depends on algFlag. For each algorithm, three outputs plus the trueState--
-%       rmse_mean:  average RMSE across all tracks
+%       rmse:       RMSE for each track
 %       x_est:      estimated tracks
 %       x_errVar:   covariance matrix of estimated tracks
 %       So that if two algorithms run, the following are output:
-%       [rmse_meanEKF, x_estEKF, x_errVarEKF, rmse_meanEKS, x_estEKS, x_errVarEKS, trueState]
+%       [rmseEKF, x_estEKF, x_errVarEKF, rmseEKS, x_estEKS, x_errVarEKS, trueState]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
@@ -43,25 +49,17 @@ function varargout = runSynthZ(F, Fbw, Z, Zbw, N, pNoiseVar, snr_dB, cepOrder, f
 % formants that are available.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('../')); % Paths
-rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% addpath(genpath('../')); % Paths
 
-% initPoles = 500 + 1000*(0:(nP - 1)); % Initialize pole locations
-% initPBW      = 80 + 40*(0:(nP - 1));
-% initZeros    = 600 + 1000*(0:(nZ - 1));    % Initialize with offset from pole locations by 100Hz
-% initZBW      = 80 + 40*(0:(nZ - 1));
-% 
+%% %%%%%%%%%%%%%%%%%%% Synthesis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 initState    = [F; Z];
 initBW       = [Fbw; Zbw]';
 
-nP = length(F);
-nZ = length(Z);
-
 %% Generate data (this simply evolves center frequencies and bandwidths via random walk)
-[trueState BW_data] = genSynthFormantTracks(pNoiseVar, N, initState, initBW);
+[trueState BW_data] = genSynthFormantTracks(pNoiseVar(1), N, initState, initBW);
 
 %% Generate noisy LPCC coefficients (observation sequence)
-[y, oNoiseVar, C_clean] = genNoisyObserZ(snr_dB, trueState(1:nP,:), BW_data(1:nP,:), trueState(nP+1:end,:), BW_data(nP+1:end,:), cepOrder, fs);
+[y_synth, oNoiseVar, C_clean] = genNoisyObserZ(snr_dB(1), trueState(1:length(F),:), BW_data(1:length(F),:), trueState(length(F)+1:end,:), BW_data(length(F)+1:end,:), cepOrder(1), fs);
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -77,13 +75,16 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
+y = y_synth(1:cepOrder(2), :);
 numObs = size(y, 2);
 
 if trackBW
-    trueState = [trueState(1:nP,:); BW_data(1:nP,:); trueState(nP+1:end,:); BW_data(nP+1:end,:)];
+    trueState = [trueState(1:length(F),:); BW_data(1:length(F),:); trueState(length(F)+1:end,:); BW_data(length(F)+1:end,:)];
     bwStates = []; % If we are tracking bandwidths do not provide them
+    Qdiag = pNoiseVar(2)*[ones(1,length(F)), 1/25*ones(1,length(F)), ones(1,length(Z)), 1/25*ones(1,length(Z))];
 else
     bwStates = BW_data;
+    Qdiag = pNoiseVar(2)*ones(1,length(F)+length(Z));
 end
 stateLen = size(trueState,1);
 
@@ -91,11 +92,15 @@ stateLen = size(trueState,1);
 Fmatrix = eye(stateLen);
 
 % process noise from read in tracks
-Q = diag(var(trueState,0,2));
+Q = diag(Qdiag); % use input variance for model
+% Q = diag(var(trueState,0,2));
+% Q = diag(pNoiseVar(2)*ones(1, stateLen));
+% Q = diag([1000 1000 1000 1000]);
 
-SNR_model = 100;
-[Ctemp, noiseVar] = addONoise(C_clean, SNR_model);
-R = noiseVar*eye(cepOrder); % Measurement noise covariance matrix R
+randn('state',sum(100*clock)); % different start point each time the noise is created
+% randn('state',5); % so added noise is the same each time
+[Ctemp, noiseVar] = addONoise(C_clean(1:cepOrder(1), :), snr_dB(2)); clear Ctemp
+R = noiseVar*eye(cepOrder(2)); % Measurement noise covariance matrix R
 
 % A voice activity detector is not used here in the synthetic case
 formantInds = ones(stateLen,numObs);
@@ -112,7 +117,7 @@ relRmse = zeros(stateLen, sum(algFlag));
 % Run Extended Kalman Filter
 if algFlag(EKF)
     smooth = 0;
-    [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
+    [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, length(F), smooth);
 
     %Track estimate into data cube for plot routines
     estTracks(:,:,countTrack) = x_estEKF;
@@ -128,7 +133,7 @@ if algFlag(EKF)
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
-    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
+    varargout(countOut) = {rmse}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
     varargout(countOut) = {x_errVarEKF}; countOut = countOut + 1;
     
@@ -138,7 +143,7 @@ end
 % Run Extended Kalman Smoother
 if algFlag(EKS)
     smooth = 1;
-    [x_estEKS x_errVarEKS] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
+    [x_estEKS x_errVarEKS] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, length(F), smooth);
 
     % Track estimate into data cube for plot routines
     estTracks(:,:,countTrack) = x_estEKS;
@@ -154,7 +159,7 @@ if algFlag(EKS)
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
-    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
+    varargout(countOut) = {rmse}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
     varargout(countOut) = {x_errVarEKS}; countOut = countOut + 1;
     
@@ -170,6 +175,6 @@ if plot_flag
 
     % A basic plotting routine to visualize results
     for j = 1:sum(algFlag)
-        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), nP,trackBW);
+        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), length(F),trackBW);
     end
 end

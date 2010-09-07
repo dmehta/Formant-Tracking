@@ -41,8 +41,8 @@ wLeft  = 1:wLength*(1-wOverlap):sLength-wLength+1;
 wRight = wLength:wLength*(1-wOverlap):sLength;
 
 % Store all extracted LPC coefficients
-allCoeffsP = zeros(lpcOrder+1, numFrames);
-allCoeffsZ = zeros(zOrder+1, numFrames);
+allCoeffsP = zeros(numFrames, lpcOrder+1);
+allCoeffsZ = zeros(numFrames, zOrder+1);
 
 for i=1:numFrames
     % Pull out current segment and multiply it by window
@@ -50,11 +50,11 @@ for i=1:numFrames
     
     if exist('num', 'var') && exist('denom', 'var') % ground truth was input
         if iscell(num) && iscell(denom) % frame-by-frame given
-            allCoeffsP(:,i) = denom{i}';
-            allCoeffsZ(:,i) = num{i}';
+            allCoeffsP(i,:) = denom{i};
+            allCoeffsZ(i,:) = num{i};
         else % one set of coefficients input
-            allCoeffsP(:,i) = denom';
-            allCoeffsZ(:,i) = num';
+            allCoeffsP(i,:) = denom;
+            allCoeffsZ(i,:) = num;
         end            
     else
         if zOrder
@@ -62,16 +62,16 @@ for i=1:numFrames
             data = iddata(win.*curSegment,[],1); % Package input
             m = armax(data,[lpcOrder zOrder]); % Call estimator with desired model orders
 
-            allCoeffsP(:,i) = m.a';
-            allCoeffsZ(:,i) = m.c';
+            allCoeffsP(i,:) = m.a;
+            allCoeffsZ(i,:) = m.c;
         else
-            allCoeffsP(:,i) = arcov(win.*curSegment, lpcOrder)';
-            allCoeffsZ(:,i) = 1;
-            %[allCoeffsP(:,i) allCoeffsZ(i,:)] = arcov(win.*curSegment, lpcOrder)';
-            %allCoeffsP(:,i) = lpc(win.*curSegment, lpcOrder)';
+            allCoeffsP(i,:) = arcov(win.*curSegment, lpcOrder);
+            allCoeffsZ(i,:) = 1;
+            %[allCoeffsP(i,:) allCoeffsZ(i,:)] = arcov(win.*curSegment, lpcOrder);
+            %allCoeffsP(i,:) = lpc(win.*curSegment, lpcOrder);
         end
     end
 end
 
 % Convert ARMA coefficients to cepstral coefficients
-C = lpc2cz(-allCoeffsP(2:end,:),-allCoeffsZ(2:end,:),cepOrder);
+C = lpc2cz(-allCoeffsP(:,2:end)',-allCoeffsZ(:,2:end)',cepOrder);

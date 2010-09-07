@@ -2,13 +2,14 @@
 % of numStates x numFrames
 %
 % Plot estimated formant tracks for poles/zeros and bandwidths with
-% estimator and 95 % confidence interval
+% estimator and posterior interval as plus/minus one standard deviation
+% around point estimates
 % 
 % Author: Patrick J. Wolfe, Daniel Rudoy, Daryush Mehta
 %
 % Created: 05/12/2010
 % Modified: 05/12/2010, 06/01/2010 (trackBW and zeroes), 07/14/2010
-% (estimator variance)
+% (estimator variance as 95 % interval), 08/26/2010 (estimator variance as stdev)
 
 function plotStateTracksFZ_EstVar(x_est,x_errVar,nP,trackBW)
 
@@ -35,8 +36,8 @@ for ff = 1:numStates
     means = x_est(ff,:);
     plot(means)
     variances = squeeze(x_errVar(ff,ff,:))';
-    low = means + tinv(0.5-95/100/2, length(means)-1)*sqrt(variances)/sqrt(length(means));
-    high = means + tinv(0.5+95/100/2, length(means)-1)*sqrt(variances)/sqrt(length(means));
+    low = means + sqrt(variances);
+    high = means - sqrt(variances);
     fill([xdata xdata(end:-1:1)], [low high(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
     plot(xdata, means, 'LineWidth', 1)
     yrange = get(gca, 'YLim');
@@ -44,42 +45,42 @@ for ff = 1:numStates
     
     if ~nZ
         if ~trackBW
-            title(['Resonance ' int2str(ff)]);
+            title(['Formant ' int2str(ff)]);
         else
             if ff > nP
-                title(['Bandwidth ' int2str(ff-nP)]);
+                title(['Formant BW ' int2str(ff-nP)]);
             else
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end            
         end
     else% zeros also
         if ~trackBW
             if ff > nP
-                title(['Anti-resonance ' int2str(ff-nP)]);
+                title(['Anti-formant ' int2str(ff-nP)]);
             else
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end
         else
             if ff <= nP
-                title(['Resonance ' int2str(ff)]);
+                title(['Formant ' int2str(ff)]);
             end
 
             if ff > nP && ff <= 2*nP
-                title(['Resonance BW ' int2str(ff-nP)]);
+                title(['Formant BW ' int2str(ff-nP)]);
             end
 
             if ff > 2*nP && ff <= (2*nP + nZ)
-                title(['Anti-resonance ' int2str(ff-2*nP)]);
+                title(['Anti-formant ' int2str(ff-2*nP)]);
             end
             
             if ff > (2*nP + nZ) && ff <= (2*nP + 2*nZ)
-                title(['Anti-resonance BW ' int2str(ff-2*nP-nZ)]);
+                title(['Anti-formant BW ' int2str(ff-2*nP-nZ)]);
             end
         end
     end
     
     if ff==1
-        xlabel('Time Block');
+        xlabel('Frame number');
         ylabel('Frequency (Hz)');
     end
 end

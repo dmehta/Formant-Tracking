@@ -52,3 +52,5 @@ for ii = 1:numF
     fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Fcolor, 'EdgeColor', 'none', 'FaceAlpha', 0.3)
     plot(xdata,trackF,Fcolor,'LineWidth',lineW);
 end
+
+format_plot

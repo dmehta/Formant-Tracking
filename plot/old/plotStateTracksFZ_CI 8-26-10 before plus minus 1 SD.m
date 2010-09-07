@@ -8,9 +8,7 @@
 
 function plotStateTracksFZ_CI(trueState,x_est,titleCell,nP,trackBW)
 % Plot estimated formant tracks for poles/zeros and bandwidths vs. ground truth with
-% X % confidence interval around mean
-
-CI = 68; % for plus/minus 1 standard deviation
+% 95% confidence interval around mean
 
 % Number of track estimates
 numEst = size(x_est,2);
@@ -48,7 +46,7 @@ for ff = 1:numStates
     box off
     hold on;
     for tt = 1:numEst
-        [L U ave] = findCI(x_estPerFreq(:,:,ff), CI);
+        [L U ave] = findCI(x_estPerFreq(:,:,ff), 95);
         fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
         plot(xdata, ave, char(titleCell(2,tt+1)), 'LineWidth', 1)
     end
@@ -93,12 +91,10 @@ for ff = 1:numStates
     end
     
     if ff==1
-        legend('+/- 1 SD', S{2},S{1})
-        xlabel('Frame number');
+        legend('95% CI', S{2},S{1})
+        xlabel('Time Block');
         ylabel('Frequency (Hz)');
     end
-    
-    format_plot
 end
 
 for ff = 1:numStates

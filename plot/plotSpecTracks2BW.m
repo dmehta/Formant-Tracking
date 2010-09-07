@@ -31,10 +31,11 @@ imagesc(t,freq,20*log10(abs(B))), axis xy
 % view(0, 90)
 % grid off
 colormap(flipud(gray(256)))
-colorbar EastOutside
+% colorbar EastOutside
 rangemax = max(max(20*log10(abs(B))));
 set(gca, 'CLim', [rangemax-60 rangemax])
 xlabel('Time (s)'), ylabel('Frequency (Hz)'), title('Tracks of formants (blue) and anti-formants (red)')
+format_plot
 hold on;
 
 %%
@@ -68,8 +69,8 @@ switch length(varargin)
                     trackBW = tracks(numF+ii,1:len,1);
                     L = trackF-trackBW/2;
                     U = trackF+trackBW/2;
-                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Fcolor, 'EdgeColor', 'none', 'FaceAlpha', 0.3)
-                    plot(xdata,trackF',Fcolor, 'LineWidth', lineW);
+                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Fcolor, 'EdgeColor', 'none')%, 'FaceAlpha', 0.3)
+                    plot(xdata,trackF','k', 'LineWidth', lineW);
                 end
                 
                 for ii = 1:numAntiF
@@ -77,8 +78,8 @@ switch length(varargin)
                     trackBW = tracks(2*numF+numAntiF+ii,1:len,1);
                     L = trackF-trackBW/2;
                     U = trackF+trackBW/2;
-                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Zcolor, 'EdgeColor', 'none', 'FaceAlpha', 0.3)
-                    plot(xdata,trackF,Zcolor, 'LineWidth', lineW);
+                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Zcolor, 'EdgeColor', 'none')%, 'FaceAlpha', 0.3)
+                    plot(xdata,trackF,'k', 'LineWidth', lineW);
                 end
                 
             else
@@ -87,8 +88,8 @@ switch length(varargin)
                     trackBW = tracks(numF+ii,1:len,1);
                     L = trackF-trackBW/2;
                     U = trackF+trackBW/2;
-                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Fcolor, 'EdgeColor', 'none', 'FaceAlpha', 0.3)
-                    plot(xdata,trackF,Fcolor, 'LineWidth', lineW);
+                    fill([xdata xdata(end:-1:1)], [L U(end:-1:1)], Fcolor, 'EdgeColor', 'none')%, 'FaceAlpha', 0.3)
+                    plot(xdata,trackF,'k', 'LineWidth', lineW);
                 end
             end            
         else
@@ -97,18 +98,18 @@ switch length(varargin)
             if numAntiF
                 for ii = 1:numF
                     trackF = tracks(ii,1:len,1);
-                    plot(xdata,trackF',Fcolor, 'LineWidth', lineW);
+                    plot(xdata,trackF','k', 'LineWidth', lineW);
                 end
                 
                 for ii = 1:numAntiF
                     trackF = tracks(numF+ii,1:len,1);
-                    plot(xdata,trackF,Zcolor, 'LineWidth', lineW);
+                    plot(xdata,trackF,'k', 'LineWidth', lineW);
                 end
                 
             else
                 for ii = 1:numF
                     trackF = tracks(ii,1:len,1);
-                    plot(xdata,trackF',Fcolor, 'LineWidth', lineW);
+                    plot(xdata,trackF','k', 'LineWidth', lineW);
                 end
             end            
         end

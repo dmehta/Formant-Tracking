@@ -1,13 +1,17 @@
 %% parameters
 
 % synthesis parameters
-dur = .05; % in s
+dur = .1; % in s
 fs = 8e3; % in Hz
 
-F = [500 1000]'; % in Hz, time-invariant formant center frequency (F)
-Fbw = [50 50]'; % in Hz, time-invariant formant bandwidth (Fbw)
+F = [500]'; % in Hz, time-invariant formant center frequency (F)
+Fbw = [50]'; % in Hz, time-invariant formant bandwidth (Fbw)
 Z = []'; % in Hz, time-invariant formant center frequency (Z)
 Zbw = []'; % in Hz, time-invariant formant bandwidth (Zbw)
+
+pNoiseVar(1) = 1000;
+snr_dB(1) = 40;
+cepOrder(1) = 4; %max(aParams.lpcOrder, aParams.zOrder);
 
 % analysis parameters
 aParams.wType = 'hamming';      % window type
@@ -19,16 +23,16 @@ aParams.peCoeff = 0;            % Pre-emphasis factor (0.9, 0.7, etc.)
 aParams.fs = fs;                % sampling rate (in Hz)
 
 % tracker parameters
-pNoiseVar = 40;
-snr_dB = 100;
-cepOrder = max(aParams.lpcOrder, aParams.zOrder);
+pNoiseVar(2) = 4;
+snr_dB(2) = 30;
+cepOrder(2) = 4; %max(aParams.lpcOrder, aParams.zOrder);
 trackBW = 1;
 plot_flag = 0; % plot transfer functions
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 offset = 0; % set initial state offset, in Hz
 
 % Monte Carlo analysis parameters
-numTrials = 1;
+numTrials = 10;
 trial = 1; % pick a trial for which plot spectrogram
 
 %% misc calculations
@@ -39,14 +43,14 @@ else
 end
 
 %% synthesize and track
-rmse = zeros(numTrials, 1);
+rmse = cell(numTrials, 1);
 x_est = cell(numTrials, 1);
 x_errVar = cell(numTrials, 1);
 x = cell(numTrials, 1);
 
 for jj = 1:numTrials
     disp(['Processing Trial #', num2str(jj), '...'])
-    [rmse(jj), x_est{jj}, x_errVar{jj}, x{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
+    [rmse{jj}, x_est{jj}, x_errVar{jj}, x{jj}] = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, ...
             cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams);
 end
 
@@ -60,6 +64,16 @@ else
     trueState = repmat([F; Z], 1, numObs);
 end
 
+%% plot tracks individually in grid style with covariances from one trial
+titleCell(1,2) = {'EKS'}; % hard coded for now
+titleCell(2,2) = {'b:'};
+titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter
+titleCell(2,1)  = {'r'};      % Color for true state plot
+nP = size(F,1);
+
+plotStateTracksFZ_EstVar_Truth(trueState,x_est{trial},x_errVar{trial},titleCell,nP,trackBW)
+disp(['Mean RMSE: ', num2str(mean(rmse{trial}))])
+
 %% plot tracks individually in grid style with confidence intervals
 titleCell(1,2) = {'EKS'}; % hard coded for now
 titleCell(2,2) = {'b:'};
@@ -69,7 +83,7 @@ nP = size(F,1);
 
 plotStateTracksFZ_CI(trueState,x_est,titleCell(:,[1 2]), nP, trackBW);
 
-disp(['Mean RMSE: ', num2str(mean(rmse))])
+disp(['Mean RMSE: ', num2str(mean(rmse{trial}))])
 
 %% Super-impose over a spectrogram
 nZ = size(Z,1);
@@ -103,7 +117,7 @@ figure(43), box off, hold on
 
 for kk = 1:numStates
     figure(42)
-    [L U ave v] = findCI(x_estPerFreq(:,:,kk), 95);
+    [L U ave v] = findCI(x_estPerFreq(:,:,kk), 68);
     fill([obs obs(end:-1:1)], [L U(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
     plot(obs, ave, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
 

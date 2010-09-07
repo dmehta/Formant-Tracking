@@ -1,16 +1,13 @@
-addpath(genpath('../')); % Paths
-
 %% parameters
 
+randn('state', 5)
+
 % synthesis parameters
-dur = 1; % in s
+dur = 2; % in s
 fs = 10000; % in Hz
 sParams.wType = 'hanning';      % window type
 sParams.wLengthMS  = 100;       % Length of window (in milliseconds)
 sParams.wOverlap = 0.5;         % Factor of overlap of window
-snr_dB(1) = 50;
-cepOrder(1) = 20; %max(aParams.lpcOrder, aParams.zOrder);
-randn('state', 5)
 
 % linear trajectory
 Fbeg = [850 1100 2810]'; Fend = [310 2790 3310]';
@@ -20,10 +17,10 @@ Fbwbeg = [80 120 160]'; Fbwend = [80 120 160]';
 
 % Zbeg = [900]'; Zend = [500]';
 % Zbwbeg = [100]'; Zbwend = [100]';
-% Zbeg = [1400]'; Zend = [1400]';
-% Zbwbeg = [100]'; Zbwend = [100]';
-Zbeg = []'; Zend = []';
-Zbwbeg = []'; Zbwend = []';
+Zbeg = [1400]'; Zend = [1400]';
+Zbwbeg = [100]'; Zbwend = [100]';
+% Zbeg = []'; Zend = []';
+% Zbwbeg = []'; Zbwend = []';
 
 % analysis parameters
 aParams.wType = sParams.wType;          % window type
@@ -35,16 +32,16 @@ aParams.peCoeff = 0;                    % Pre-emphasis factor (0.9, 0.7, etc.)
 aParams.fs = fs;                        % sampling rate (in Hz) to resample to
 
 % tracker parameters
-snr_dB(2) = 50;
-cepOrder(2) = 20; %max(aParams.lpcOrder, aParams.zOrder);
+snr_dB = 20;
+cepOrder = 20; %max(aParams.lpcOrder, aParams.zOrder);
 trackBW = 1;
 plot_flag = 0; % plot transfer functions
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
-offset = 0; % set initial state offset, in Hz
-variableParam = 1:50;
+offset = 100; % set initial state offset, in Hz
 
 % Monte Carlo analysis parameters
-numTrials = 5;
+numTrials = 10;
+trial = 1; % pick a trial for which plot spectrogram
 
 %% misc calculations
 wLength = floor(aParams.wLengthMS/1000*fs);
@@ -121,67 +118,36 @@ rmse = cell(numTrials, 1);
 x_est = cell(numTrials, 1);
 x_errVar = cell(numTrials, 1);
 x = cell(numTrials, 1);
-trueState = cell(numTrials, 1);
 
-% loop through
-for ii = 1:length(variableParam)
-    for jj = 1:numTrials
-    %disp(['Processing Trial #', num2str(jj), '...'])
-    fprintf('.')
-
-    % comment if no variable parameter
-    %cepOrder = [cepOrder(1), variableParam(ii)];
-    snr_dB = [snr_dB(1), variableParam(ii)];
-    
-    [rmse{jj,ii}, x_est{jj,ii}, x_errVar{jj,ii}, x{jj,ii}, trueState{jj,ii}] = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, ...
+for jj = 1:numTrials
+    disp(['Processing Trial #', num2str(jj), '...'])
+    [rmse{jj}, x_est{jj}, x_errVar{jj}, x{jj}] = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, ...
             cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams, sParams);
-    end
 end
 
-%% plot tracks individually in grid style with covariances from one trial
-trial = 2;
-variableParamNumber = 20;
+if trackBW
+    trueState = [F; Fbw; Z; Zbw];
+else
+    trueState = [F; Z]; % 
+end
+
+%% plot tracks individually in grid style with confidence intervals from
+%% MonteCarlo analysis
 titleCell(1,2) = {'EKS'}; % hard coded for now
 titleCell(2,2) = {'b:'};
 titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter
 titleCell(2,1)  = {'r'};      % Color for true state plot
 nP = size(F,1);
 
-plotStateTracksFZ_EstVar_Truth(trueState{trial,variableParamNumber},x_est{trial,variableParamNumber},x_errVar{trial,variableParamNumber},titleCell,nP,trackBW)
-disp(['Mean RMSE: ', num2str(mean(rmse{trial,variableParamNumber}))])
-rmse{trial,variableParamNumber}
+plotStateTracksFZ_CI(trueState,x_est,titleCell(:,[1 2]), nP, trackBW);
 
-%% plot RMSE of formant frequency and bandwidth vs variable parameter
-xdata = variableParam;
-
-% repackage into 3D matrix of numTrials x length(variableParam) x numStates
-rmsePerState = zeros(numTrials, length(variableParam), size(x0,1));
-for kk = 1:size(x0,1)
-    for jj = 1:numTrials
-        for ii = 1:length(variableParam)
-            rmsePerState(jj, ii, kk) = rmse{jj,ii}(kk);
-        end
-    end
-end
-
-stateNumber = 1;
-figure, hold on
-% [ydata_lower ydata_upper ydata] = findCI(rmsePerState(:,:,stateNumber), 68); % rmse for one state
-[ydata_lower ydata_upper ydata] = findCI(mean(rmsePerState, 3), 68); % collapse rmse across all states
-fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
-plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)
-% xlabel('# cepstral coefficents')
-xlabel('Varied parameter')
-ylabel('Average RMSE (Hz)')
-format_plot
+disp(['Mean RMSE: ', num2str(mean(rmse))])
 
 %% Super-impose over a spectrogram
-trial = 2;
-variableParamNumber = 20;
 nZ = size(Z,1);
 aParams.wLength = floor(aParams.wLengthMS/1000*fs);
 
-plotSpecTracks2BW(x{trial,variableParamNumber}, x_est{trial,variableParamNumber}, aParams, nZ, trackBW);
+plotSpecTracks2BW(x{trial}, x_est{trial}, aParams, nZ, trackBW);
 firstline = get(get(gca,'Title'),'String');
 title({['Trial #', num2str(trial)]; firstline})
 axis tight
@@ -190,29 +156,28 @@ format_plot
 %% plot all simulations against truth
 figure, hold on
 for jj = 1:numTrials
-    plot(x_est{jj,variableParamNumber}(1:size(F,1), :)', 'b')
-    plot(x_est{jj,variableParamNumber}(size(F,1)+1:end, :)', 'r')
+    plot(x_est{jj}(1:size(F,1), :)', 'b')
+    plot(x_est{jj}(size(F,1)+1:end, :)', 'r')
 end
-plot(trueState{jj,variableParamNumber}', 'LineWidth', 3, 'Color', 'k') % true state is arbitrary!
+plot(trueState', 'LineWidth', 3, 'Color', 'k')
 xlabel('Frame')
 ylabel('Frequency (Hz)')
 title('Estimated EKS trajectories (Formant-blue, Antiformant-red, True-black)')
 
-%% plot tracks individually in grid style with confidence intervals from
-%% Monte Carlo analysis - need to fix to pick one trial (repackage x_est)
-% titleCell(1,2) = {'EKS'}; % hard coded for now
-% titleCell(2,2) = {'b:'};
-% titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter
-% titleCell(2,1)  = {'r'};      % Color for true state plot
-% nP = size(F,1);
-% 
-% plotStateTracksFZ_CI(trueState{trial,variableParamNumber},x_est{trial,variableParamNumber},titleCell(:,[1 2]), nP, trackBW);
-% disp(['Mean RMSE: ', num2str(mean(rmse{trial}))])
+%% plot tracks individually in grid style with covariances from one trial
+titleCell(1,2) = {'EKS'}; % hard coded for now
+titleCell(2,2) = {'b:'};
+titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter
+titleCell(2,1)  = {'r'};      % Color for true state plot
+nP = size(F,1);
+
+plotStateTracksFZ_EstVar_Truth(trueState,x_est{trial},x_errVar{trial},titleCell,nP,trackBW)
+disp(['Mean RMSE: ', num2str(mean(rmse))])
 
 %% plot frequency vs frame with confidence intervals
 % % repackage
-% x_estPerFreq = zeros(numTrials, numFrames, size(trueState{jj},1));
-% for kk = 1:size(trueState{jj},1)
+% x_estPerFreq = zeros(numTrials, numFrames, size(trueState,1));
+% for kk = 1:size(trueState,1)
 %     for jj = 1:numTrials
 %         x_estPerFreq(jj, :, kk) = x_est{jj}(kk, :);
 %     end
@@ -220,7 +185,7 @@ title('Estimated EKS trajectories (Formant-blue, Antiformant-red, True-black)')
 % 
 % xdata = 1:numFrames;
 % figure, box off, hold on
-% for kk = 1:size(trueState{jj},1)
+% for kk = 1:size(trueState,1)
 %     [ydata_lower ydata_upper ydata] = findCI(x_estPerFreq(:,:,kk), 68);
 %     fill([xdata xdata(end:-1:1)], [ydata_lower ydata_upper(end:-1:1)], [0.9 0.9 0.9], 'EdgeColor', 'none')
 %     plot(xdata, ydata, 'b-', 'MarkerFace', 'b', 'MarkerSize', 1, 'LineWidth', 1)

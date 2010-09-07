@@ -1,4 +1,4 @@
-function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams)
+function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cepOrder, fs, plot_flag, algFlag, x0)
 
 % Track poles and zeros (no bandwidths) on synthetic data
 % Based on runSynthZ(), which was model-based. This function is
@@ -7,10 +7,6 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 % Author: Daryush Mehta
 % Created:  04/30/2010
 % Modified: 05/01/2010 variable output number
-%           05/09/2010 track bandwidths
-%           06/12/2010 P matrix output
-%           06/16/2010 (analysis parameters on input, x output)
-%           08/31/2010 DDM: pNoiseVar, snr_dB, cepOrder each has two values: one for synthesis, other for tracking
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (col vector), in Hz
@@ -18,32 +14,20 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 %    Z:         center frequencies of the anti-resonances (col vector), in Hz
 %    Zbw:       corresponding bandwidths of the anti-resonances (col vector), in Hz
 %    dur:       duration of signal, in s
-%    pNoiseVar: process noise variance; first element for synthesis, second
-%                     element for tracking; [100 120]
-%    snr_dB:    observation noise, in dB; first element for synthesis, second
-%                     element for tracking; [15 25]
-%    cepOrder:  Number of cepstal coefficients to compute; first element for synthesis, second
-%                     element for tracking; [15 25]
+%    pNoiseVar: process noise variance
+%    snr_dB:    observation noise, in dB
+%    cepOrder:  Number of cepstal coefficients to compute
 %    fs:        sampling rate of waveform, in Hz
-%    trackBW:   track bandwidths if 1
 %    plot_flag: plot figures if 1
 %    algFlag:   select 1 to run, 0 not to for [EKF EKS]
-%    x0:        initial state of formant trackers [F; Fbw; Z; Zbw], in Hz
-%    aParams:   structure with following fields:
-%                     wType       % window type
-%                     wLengthMS   % Length of window (in milliseconds)
-%                     wOverlap    % Factor of overlap of window
-%                     lpcOrder    % Number of AR coefficients
-%                     zOrder      % Number of MA coefficients
-%                     peCoeff     % Pre-emphasis factor
+%    x0:        initial state of formant trackers [F;Z], in Hz
 % 
 % OUTPUT:
-%    Depends on algFlag. For each algorithm, three outputs then waveform--
-%       rmse:       RMSE for each track
-%       x_est:      estimated tracks
-%       x_errVar:   covariance matrix of estimated tracks
+%    Depends on algFlag. For each algorithm, two outputs generated--
+%       rmse_mean1: average RMSE across all tracks
+%        x_est1:  estimated tracks
 %       So that if two algorithms run, the following are output:
-%       [rmseEKF, x_estEKF, x_errVarEKF, rmseEKS, x_estEKS, x_errVarEKS, x]
+%       [rmse_mean1, x_est1, rmse_mean2, x_est2]
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % USAGE
@@ -56,6 +40,7 @@ function varargout = runSynth_ARMApq(F, Fbw, Z, Zbw, dur, pNoiseVar, snr_dB, cep
 
 addpath(genpath('../')); % Paths
 rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+% rand('state', 2); randn('state', 44);
 
 %% Create an ARMA model by filtering a white noise sequence
 N = round(dur*fs);
@@ -155,12 +140,12 @@ if plot_flag
 end
 
 %% Calculate LPCC coefficients in each window
-wType       = aParams.wType;     % Window type
-wLengthMS   = aParams.wLengthMS; % Length of window (in milliseconds)
-wOverlap    = aParams.wOverlap;  % Factor of overlap of window
-lpcOrder    = aParams.lpcOrder;  % Number of AR Coefficients
-zOrder      = aParams.zOrder;    % Number of MA Coefficients
-peCoeff     = aParams.peCoeff;   % Pre-emphasis factor
+wType = 'hamming';  % window type
+wLengthMS  = 20;    % Length of window (in milliseconds)
+wOverlap = 0.5;     % Factor of overlap of window
+lpcOrder = length(F)*2;       % Number of LPC coefficients
+zOrder = length(Z)*2;         % Number of MA coefficients
+peCoeff = 0;     % Pre-emphasis factor
 
 wLength = floor(wLengthMS/1000*fs);
 wLength = wLength + (mod(wLength,2)~=0); % Force even
@@ -168,10 +153,7 @@ win = feval(wType,wLength);
 
 % uncomment next line to input truth
 % y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder, num, denom);
-c = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder(1));
-
-% observation noise added given SNR in input
-[y_synth, oNoiseVar] = addONoise(c, snr_dB(1)); % noise added to ARMA cepstrum
+y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -187,41 +169,32 @@ end
 % y_{k}   = Hx_{k} + v_k, v_k ~ N(0, R)
 % We need to set the parameters: F, Q and R
 % H is obtained in the EKF via linearization about the state
-y = y_synth(1:cepOrder(2), :);
 nP = length(F);
 nZ = length(Z);
 numObs = size(y, 2);
 
-if trackBW
-    trueState = [repmat(F, 1, numObs); repmat(Fbw, 1, numObs); ...
-        repmat(Z, 1, numObs); repmat(Zbw, 1, numObs)];
-    bwStates = []; % If we are tracking bandwidths do not provide them
-else
-    trueState = repmat([F; Z], 1, numObs);
-    bwStates = repmat([Fbw; Zbw], 1, numObs);
-end
-stateLen = size(trueState,1);
+Fmatrix = eye(nP + nZ);   % Process Matrix F
 
-% Process Matrix F
-Fmatrix = eye(stateLen);
+Q = diag(ones(nP+nZ,1)*pNoiseVar);
 
-% process noise is input parameter
-Q = diag(pNoiseVar(2)*ones(stateLen,1));
+[y, oNoiseVar] = addONoise(y, snr_dB);
+R = oNoiseVar*eye(cepOrder); % Measurement noise covariance matrix R
 
-[Ctemp, noiseVar] = addONoise(c(1:cepOrder(2), :), snr_dB(2)); clear Ctemp
-R = noiseVar*eye(cepOrder(2)); % Measurement noise covariance matrix R perfectly matches added noise
+bwFlag = 1; % 0 - Use loaded bandwidths, 1 - Average bandwidths
+bwStates = repmat([Fbw; Zbw], 1, size(y,2));
 
 % A voice activity detector is not used here in the synthetic case
-formantInds = ones(stateLen,numObs);
+formantInds = ones(N,nP + nZ);
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables
 
-EKF = 1; EKS = 2;
+% Initialize root-mean-square error matrices:
+rmse    = zeros(nP + nZ, sum(algFlag));
+relRmse = zeros(nP + nZ, sum(algFlag));
 
-% Initialize root-mean-square error matrices
-rmse    = zeros(stateLen, sum(algFlag));
-relRmse = zeros(stateLen, sum(algFlag));
+EKF = 1; EKS = 2;
+trueState = repmat([F; Z], 1, size(y,2));
 
 % Run Extended Kalman Filter
 if algFlag(EKF)
@@ -235,17 +208,16 @@ if algFlag(EKF)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
-    varargout(countOut) = {rmse}; countOut = countOut + 1;
+    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKF}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKF}; countOut = countOut + 1;
-    
+    %display(['Average EKF RMSE: ' num2str(rmse_mean)]);    
     countTrack = countTrack + 1;     % Increment counter
 end
 
@@ -261,21 +233,18 @@ if algFlag(EKS)
     titleCell(2,countTrack+1) = {'b:'};
 
     % Compute and Display MSE and RMSE
-    for j = 1:stateLen
+    for j = 1:nP+nZ
         rmse(j,countTrack) = norm((estTracks(j,:,countTrack)-trueState(j,:)))/sqrt(numObs);
         relRmse(j,countTrack) = (rmse(j,countTrack)/norm(trueState(j,:)))*sqrt(numObs);
     end
 
     % Display output summary and timing information
     rmse_mean = mean(rmse(:,countTrack));
-    varargout(countOut) = {rmse}; countOut = countOut + 1;
+    varargout(countOut) = {rmse_mean}; countOut = countOut + 1;
     varargout(countOut) = {x_estEKS}; countOut = countOut + 1;
-    varargout(countOut) = {x_errVarEKS}; countOut = countOut + 1;
-    
+    %display(['Average EKS RMSE: ' num2str(rmse_mean)]);
     countTrack = countTrack + 1;     % Increment counter
 end
-
-varargout(countOut) = {x}; countOut = countOut + 1;
 
 if plot_flag
     %% Initial Plotting Variables
@@ -283,7 +252,6 @@ if plot_flag
     titleCell(2,1)  = {'r'};            % Color for true state plot
 
     % A basic plotting routine to visualize results
-    for j = 1:sum(algFlag)
-        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), nP);
-    end
+    plotStateTracksFZ(trueState,estTracks(:,:,1),titleCell(:,[1 2]), nP);
+    %plotStateTracksFZ(trueState,estTracks(:,:,2),titleCell(:,[1 3]), nP);
 end
