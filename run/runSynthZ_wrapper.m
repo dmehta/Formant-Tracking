@@ -1,10 +1,10 @@
-addpath(genpath('../')); % Paths
+% addpath(genpath('../')); % Paths
 
 %% parameters
 
 % synthesis parameters
 N = 100; % number of observations
-fs = 8e3; % in Hz
+fs = 10e3; % in Hz
 % rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
 rand('state',2); randn('state',2); % Seeds for JASA figure
 
@@ -18,21 +18,21 @@ Fbw = [50 80]'; % in Hz, time-invariant formant bandwidth (Fbw)
 Z = []'; % in Hz, time-invariant formant center frequency (Z)
 Zbw = []'; % in Hz, time-invariant formant bandwidth (Zbw)
 
-pNoiseVar(1) = 10;
-snr_dB(1) = 40;
-cepOrder(1) = 30;
+pNoiseVar(1) = 0;
+snr_dB(1) = 50;
+cepOrder(1) = 20;
 
-% analysis parameters - NONE
+% analysis parameters
+cepOrder(2) = 20;
 
 % tracker parameters
-pNoiseVar(2) = 10;
-snr_dB(2) = 30;
-cepOrder(2) = 30;
+pNoiseVar(2) = 0;
+snr_dB(2) = 20;
 trackBW = 1;
 plot_flag = 0; % do plots
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 offset = 0; % set initial state offset, in Hz
-variableParam = -40:2:60;
+variableParam = 50;
 
 % Monte Carlo analysis parameters
 numTrials = 1;
@@ -68,8 +68,8 @@ for ii = 1:length(variableParam)
 end
     
 %% plot tracks individually in grid style with covariances from one trial
-trial = 2;
-variableParamNumber = 20;
+trial = 1;
+variableParamNumber = 1;
 titleCell(1,2) = {'EKS'}; % hard coded for now
 titleCell(2,2) = {'b:'};
 titleCell(1,1)  = {'True'};   % Keeps track of trackers used for plotter

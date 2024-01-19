@@ -1,8 +1,8 @@
 %% parameters
 
 % WAV file to analyze
-% filename = '../data/DDM_speech/m.wav';
-filename = '../data/DDM_speech/n.wav';
+filename = '../data/DDM_speech/m.wav';
+% filename = '../data/DDM_speech/n.wav';
 % filename = '../data/DDM_speech/ng.wav';
 % filename = '../data/DDM_speech/m_asp.wav';
 % filename = '../data/DDM_speech/n_asp.wav';

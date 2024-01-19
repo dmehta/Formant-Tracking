@@ -69,9 +69,11 @@ switch testMethod
         error('Invalid Test Command. Allowed: Synth, VTR, WS, PRAAT');
 end
 
-addpath(genpath('../')); % Set paths
-rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
-% rand('state', 1); randn('state',1); % Set seeds
+% addpath(genpath('../')); % Set paths
+
+% comment out seed line if running EKFvsPF.m, so seeds can be set there
+% rand('state',sum(100*clock)); randn('state',sum(100*clock)); % Seeds
+rand('state', 1); randn('state',1); % Set seeds
 % doPlots = 1;
 
 % Generate data according to the model
@@ -140,7 +142,7 @@ formantInds = ones(numObs,numFormants);
 
 % General Settings
 % Decision Flags for Tracking Processes, and parameters
-algFlag = [0 1 0 0 0]; % Select 1 to run, 0 not to
+algFlag = [1 0 0 1 0]; % Select 1 to run, 0 not to
 EKF = 1; EKS = 2; EKS_EM = 3; PF = 4; RBPF = 5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

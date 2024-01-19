@@ -1,8 +1,8 @@
 function C = lpc2cz(arCoeffs, maCoeffs, cepOrder)
 
 % Using ARMA coefficients computes a specified number of the coefficients
-% of the corresponding real cepstrum. NB: Does not include zeroth AR or MA
-% coefficients
+% of the corresponding real cepstrum. NB: Do not input leading AR or MA
+% coefficient. ALSO, negate output of lpc() or arcov() or fb2tf().
 %
 % INPUT:
 %    arCoeffs: p x numObs -- the ar coefficients for each frame of data

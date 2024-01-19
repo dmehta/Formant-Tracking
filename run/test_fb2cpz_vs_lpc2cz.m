@@ -1,4 +1,4 @@
-addpath(genpath('../')); % Set paths
+% addpath(genpath('../')); % Set paths
  
 fs = 16e3; % Hz
 cepOrder = 15;

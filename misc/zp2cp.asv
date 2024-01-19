@@ -1,0 +1,22 @@
+function [N, D] = fb2tf(F, Fbw, Z, Zbw, fs)
+
+% derive coefficients for the formant resonators
+a=zeros(1, length(formants_freq));
+b=zeros(1, length(formants_freq));
+c=zeros(1, length(formants_freq));
+numerator = 1;
+denominator = 1;
+for i = 1:length(formants_freq)
+    b(i) = 2 * cos(2*pi*F(i)/fs) * exp(-pi*BW(i)/fs);
+    c(i) = -exp(-2*pi*BW(i)/fs);
+    a(i) = 1 - b(i) - c(i);
+    
+    numerator = numerator*a(i);
+    denominator = conv(denominator,[ 1 -b(i) -c(i)]);
+end
+
+% filter coefficients
+N = numerator;
+A = denominator;
+
+

@@ -3,45 +3,56 @@ randn('state', 5)
 
 %% parameters
 dur = 2; % in s
-snr_dB = 20;
-cepOrder = 20;
+snr_dB = [20 20];
+cepOrder = [20 20];
 fs = 10e3;
 trackBW = 1;
 plot_flag = 0;
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
-wType = 'hanning';  % window type
-wLengthMS  = 100;    % Length of window (in milliseconds)
-wOverlap = 0.5;     % Factor of overlap of window
 
-%%
-wLength = floor(wLengthMS/1000*fs);
-wLength = wLength + (mod(wLength,2)~=0); % Force even
-win = feval(wType,wLength);
-N = floor(dur*fs);
-N = N - mod(N,wLength);
-numFrames = floor(N/((1-wOverlap)*wLength))-1;
+sParams.wType = 'hanning';      % window type
+sParams.wLengthMS  = 100;       % Length of window (in milliseconds)
+sParams.wOverlap = 0.5;         % Factor of overlap of window
 
-%% trajectory
 Fbeg = [500]';
 Fend = [900]';
+Fbwbeg = [100]';
+Fbwend = [100]';
+
+Zbeg = [900]';
+Zend = [500]';
+Zbwbeg = [100]';
+Zbwend = [100]';
+
+% analysis parameters
+aParams.wType = sParams.wType;          % window type
+aParams.wLengthMS = sParams.wLengthMS;  % Length of window (in milliseconds)
+aParams.wOverlap = sParams.wOverlap;    % Factor of overlap of window
+aParams.lpcOrder = length(Fbeg)*2;      % Number of AR coefficients
+aParams.zOrder = length(Zbeg)*2;        % Number of MA coefficients
+aParams.peCoeff = 0;                    % Pre-emphasis factor (0.9, 0.7, etc.)
+aParams.fs = fs;                        % sampling rate (in Hz) to resample to
+
+wLength = floor(aParams.wLengthMS/1000*fs);
+wLength = wLength + (mod(wLength,2)~=0); % Force even
+win = feval(aParams.wType,wLength);
+N = floor(dur*aParams.fs);
+N = N - mod(N,wLength);
+numFrames = floor(N/((1-aParams.wOverlap)*wLength))-1;
+
+%% trajectory
 Fpert = 0*repmat(cos(2*pi*8*[0:numFrames-1]/numFrames*dur), size(Fbeg, 1), 1);
 F = interp1([1 numFrames]', [Fbeg Fend]', 1:numFrames)'; if length(Fbeg) == 1, F=F'; end;
 F = F + Fpert + 10*randn(size(F));
 
-Fbwbeg = [100]';
-Fbwend = [100]';
 Fbwpert = 0*repmat(cos(2*pi*10*[0:numFrames-1]/numFrames*dur), size(Fbwbeg, 1), 1);
 Fbw = interp1([1 numFrames]', [Fbwbeg Fbwend]', 1:numFrames)'; if length(Fbwbeg) == 1, Fbw=Fbw'; end;
 Fbw = Fbw + Fbwpert + 10*randn(size(Fbw));
 
-Zbeg = [900]';
-Zend = [500]';
 Zpert = 0*repmat(cos(2*pi*7*[0:numFrames-1]/numFrames*dur), size(Zbeg, 1), 1);
 Z = interp1([1 numFrames]', [Zbeg Zend]', 1:numFrames)'; if length(Zbeg) == 1, Z=Z'; end;
 Z = Z + Zpert + 10*randn(size(Z));
 
-Zbwbeg = [100]';
-Zbwend = [100]';
 Zbwpert = 0*repmat(cos(2*pi*6*[0:numFrames-1]/numFrames*dur), size(Zbwbeg, 1), 1);
 Zbw = interp1([1 numFrames]', [Zbwbeg Zbwend]', 1:numFrames)'; if length(Zbwbeg) == 1, Zbw=Zbw'; end;
 Zbw = Zbw + Zbwpert + 10*randn(size(Zbw));
@@ -76,13 +87,13 @@ end
 
 %%
 numTrials = 10;
-rmse = zeros(numTrials, 1);
+rmse = cell(numTrials, 1);
 x_est = cell(numTrials, 1);
 
 for jj = 1:numTrials
     tic
-    [rmse(jj), x_est{jj}] = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, ...
-            cepOrder, fs, trackBW, plot_flag, algFlag, x0);        
+    [rmse{jj}, x_est{jj}] = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, ...
+            cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams, sParams);        
     toc
 end
 
@@ -131,4 +142,4 @@ nP = size(F,1);
 
 plotStateTracksFZ_CI(trueState,x_est,titleCell(:,[1 2]), nP, trackBW);
 
-disp(['Mean RMSE: ', num2str(mean(rmse))])
+disp(['Mean RMSE: ', num2str(mean(rmse{1,1}))])

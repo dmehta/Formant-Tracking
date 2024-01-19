@@ -42,8 +42,8 @@ algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 offset = 100; % set initial state offset, in Hz
 
 % Monte Carlo analysis parameters
-numTrials = 1000;
-trial = 3; % pick a trial for which plot spectrogram
+numTrials = 1;
+trial = 1; % pick a trial for which plot spectrogram
 
 %% misc calculations
 wLength = floor(aParams.wLengthMS/1000*fs);

@@ -1,4 +1,4 @@
-function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFileName, algFlag, x0, bwStates, aParams)
+function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFileName, algFlag, x0, bwStates, aParams, formantInds)
 
 % This code is incomplete. It is meant to test the pole/zero trackers on
 % real speech. However, two things are necessary
@@ -11,9 +11,11 @@ function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFile
 % DGR: 02/15/2010
 
 % UPDATE
-% Tracker has been coded for zeros and bandwidths simultaneously.
-% DDM: 06/02/2010
-
+% DDM: 06/21/2011 formantInds input now means something
+% DDM: 06/02/2010 Tracker has been coded for zeros and bandwidths simultaneously.
+% DDM: 09/28/2010 formantInds is input parameter
+% DDM: 07/30/2011 corrected formantInds mask size
+% 
 % Test tracking algorithms using raw audio waveform. Requires a 
 % post-processed file from WaveSurfer in order to input bandwidths,
 % estimate inter-formant correlation (if desired) and validate the results.
@@ -39,9 +41,9 @@ function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFile
 %                       preferably the exact number to avoid mismatch in
 %                       resampling issues that might come up.
 %    algFlag:       Select 1 to run, 0 not to for [EKF EKS]
-%    x0:            Initial states (center frequencies) of formant trackers [(2*numFormants + 2*numAntiformants) x 1], in Hz
+%    x0:            Initial states (center frequencies) of formant trackers [(numFormants + numAntiformants) x 1], in Hz
 %    bwStates:      Initial states (bandwidths) of formant trackers, if
-%                       applicable [(2*numFormants + 2*numAntiformants) x 1], in Hz
+%                       applicable [(numFormants + numAntiformants) x 1], in Hz
 %    aParams:       Structure with following fields:
 %                       wType       % window type
 %                       wLengthMS   % Length of window (in milliseconds)
@@ -49,6 +51,7 @@ function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFile
 %                       lpcOrder    % Number of AR coefficients
 %                       zOrder      % Number of MA coefficients
 %                       peCoeff     % Pre-emphasis factor
+%    formantInds:   masking matrix of formant indices; 0 if masked, 1 if unmasked
 % 
 % OUTPUT:
 %    Depends on algFlag. For each algorithm, two outputs then waveform--
@@ -66,7 +69,7 @@ function varargout = runWaveZ(cepOrder, numFormants, numAntiF, trackBW, dataFile
 %% Error checking
 
 % Set paths
-addpath(genpath('../'));
+% addpath(genpath('../'));
 
 % Load audio waveform %
 display(['Reading data from WAV file ' dataFileName])
@@ -102,6 +105,7 @@ aParams.win        = win;       % The actual window
 
 % Generate cepstral data
 y = genLPCCz(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
+% y = genCeps(wav, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%% Tracking Algorithms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,22 +128,40 @@ if trackBW
     % Process noise covariance matrix Q
     Q = zeros(size(x0));
     %Q = 100^2*eye(stateLen); %%% NEED BETTER ESTIMATION
-    Q(1:numFormants) = 1000^2;
-    Q(numFormants+1:numFormants*2) = 100^2;
-    Q(2*numFormants+1:2*numFormants+numAntiF) = 1000^2;
-    Q(2*numFormants+numAntiF+1:end) = 100^2;
+    Q(1:numFormants) = 10e4;
+    Q(numFormants+1:numFormants*2) = 1e4;
+    Q(2*numFormants+1:2*numFormants+numAntiF) = 10e4;
+    Q(2*numFormants+numAntiF+1:end) = 1e4;
     Q = diag(Q);
 else
     stateLen = numFormants + numAntiF;
     bwStates = repmat(bwStates, 1, numObs);
     
     % Process noise covariance matrix Q
-    Q = diag(ones(stateLen,1)*1000^2);
+    Q = diag(ones(stateLen,1)*10e4);
 end
 
-% A voice activity detector is not used here yet
-display('Not using Voice Activity Detection');
-formantInds = ones(stateLen, numObs);
+% formantInds is input
+if isempty(formantInds)
+    display('Not using Voice Activity Detection');
+    formantInds = ones(stateLen, numObs);
+else
+    if length(formantInds) > 1
+        % use formantInds input
+    else
+        coastJoint = 1;    % Coast all formants jointly, or not
+        quantThresh = .15; % power quantile threshold for coasting
+        plotVad = 0;
+        multiBand = ~coastJoint;
+        [frameInds] = simpleVAD(wav, aParams, quantThresh, multiBand, [], plotVad);
+        if trackBW
+            formantInds = repmat(frameInds,2*numFormants+2*numAntiF,1)';
+        else
+            formantInds = repmat(frameInds,numFormants+numAntiF,1)';
+        end
+        formantInds = formantInds';
+    end
+end
 
 % Process Matrix F, Correlation is not being tested here
 Fmatrix = eye(stateLen);
@@ -150,6 +172,7 @@ Fmatrix = eye(stateLen);
 % Using sigExp = 2 for synthetic vowels, but =1 in formant experiments
 lambda = 10^(0); sigExp = 1;
 R = diag(1/lambda.*ones(cepOrder,1)./(((1:cepOrder).^sigExp)'));
+% R = diag(1e-0*ones(cepOrder,1));
 
 countTrack = 1; % Counter for storing results
 countOut = 1; % Counter for output variables
@@ -163,7 +186,7 @@ relRmse = zeros(numFormants, sum(algFlag));
 
 %% Run Extended Kalman Filter
 if algFlag(EKF)
-    smooth = 1;
+    smooth = 0;
     [x_estEKF x_errVarEKF] = formantTrackEKSZ(y, Fmatrix, Q, R, x0, formantInds, fs, bwStates, nP, smooth);
     
     %Track estimate into data cube for plot routines

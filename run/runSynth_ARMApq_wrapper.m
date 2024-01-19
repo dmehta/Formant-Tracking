@@ -9,13 +9,13 @@ Fbw = [50]'; % in Hz, time-invariant formant bandwidth (Fbw)
 Z = []'; % in Hz, time-invariant formant center frequency (Z)
 Zbw = []'; % in Hz, time-invariant formant bandwidth (Zbw)
 
-pNoiseVar(1) = 1000;
-snr_dB(1) = 40;
-cepOrder(1) = 4; %max(aParams.lpcOrder, aParams.zOrder);
+pNoiseVar(1) = 100;
+snr_dB(1) = 30;
+cepOrder(1) = 20; %max(aParams.lpcOrder, aParams.zOrder);
 
 % analysis parameters
 aParams.wType = 'hamming';      % window type
-aParams.wLengthMS = 20;         % Length of window (in milliseconds)
+aParams.wLengthMS = 25;         % Length of window (in milliseconds)
 aParams.wOverlap = 0.5;         % Factor of overlap of window
 aParams.lpcOrder = length(F)*2; % Number of AR coefficients
 aParams.zOrder = length(Z)*2;   % Number of MA coefficients
@@ -23,16 +23,16 @@ aParams.peCoeff = 0;            % Pre-emphasis factor (0.9, 0.7, etc.)
 aParams.fs = fs;                % sampling rate (in Hz)
 
 % tracker parameters
-pNoiseVar(2) = 4;
+pNoiseVar(2) = 100;
 snr_dB(2) = 30;
-cepOrder(2) = 4; %max(aParams.lpcOrder, aParams.zOrder);
+cepOrder(2) = 20; %max(aParams.lpcOrder, aParams.zOrder);
 trackBW = 1;
 plot_flag = 0; % plot transfer functions
 algFlag = [0 1]; % Select 1 to run, 0 not to; [EKF EKS]
 offset = 0; % set initial state offset, in Hz
 
 % Monte Carlo analysis parameters
-numTrials = 10;
+numTrials = 1;
 trial = 1; % pick a trial for which plot spectrogram
 
 %% misc calculations

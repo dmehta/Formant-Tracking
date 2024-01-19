@@ -7,7 +7,10 @@ function [PI] = fitVAR(x, p)
 % Number of points per time-series, number of time-series
 [N dim] = size(x);
 
-% Construct VAR(p) estimate following Hamilton 11.1
+% Construct VAR(p) estimate following Hamilton, Section 11.1
+% Chapter 11: Vector autoregressions
+% Section 11.2: Maximum likelihood estimation and hypothesis testing for an
+% unrestricted vector autoregression
 m1 = zeros(dim,dim*p);
 m2 = zeros(dim*p);
 for i = p+1:N

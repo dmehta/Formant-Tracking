@@ -1,4 +1,5 @@
 % varargin -- numAntiF, trackBW
+% corrected xStart to half window length (does not depend on xScale)
 
 function [] = plotSpecTracks2(audio, tracks, aParams, varargin)
 
@@ -7,19 +8,19 @@ wLength = aParams.wLength;
 wOverlap = aParams.wOverlap;
 
 % Spectrogram Code
-winlen = floor(fs/1000*8);  % 8 ms to make plots clear
+winlen = floor(fs/1000*4);  % 4 ms to make plots clear
 winlen = winlen + (mod(winlen,2)~=0); % force even
-winoverlap = winlen/2; % 50pct overlap
+winoverlap = winlen-1; % 50pct overlap
 
 figure;
-specgram(audio,winlen,fs,hamming(winlen),winoverlap);
-axis xy, colormap(flipud(pink(256)))
+specgram(audio,512,fs,hamming(winlen),winoverlap);
+axis xy, colormap(flipud(pink(128)))
 axis tight, box off
 xlabel('Time (s)'), ylabel('Frequency (Hz)'), title('Tracks of formants (yellow) and antiformants (cyan)')
 hold on;
 
 xScale = 1/fs*wLength*wOverlap;
-xStart = xScale/2;
+xStart = wLength/fs/2;
 xInd = xStart:xScale:xStart+xScale*(size(tracks(1,:,1),2)-1);
 len = size(tracks,2);
 

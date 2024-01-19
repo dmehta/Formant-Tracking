@@ -6,10 +6,11 @@ function [] = plotSpecTracks(E,tracks,color)
 % index as plotted by spectrogram
 % Created : 3/23/2007
 % Last Updated : 3/23/2007
+% corrected xStart to half window length (does not depend on xScale)
 
 % Overlay Resonant Tracks onto Spectrogram
 xScale = 1/E.fs*E.wLength*E.wOverlap;
-xStart = xScale/2;
+xStart = E.wLength/E.fs/2;
 xInd = xStart:xScale:xStart+xScale*(size(tracks(1,:,1),2)-1);
 len = min([size(tracks,2) ...
           size(E.trueState,2) ...

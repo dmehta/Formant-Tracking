@@ -1,0 +1,55 @@
+function [N, D] = fb2tf(F, Fbw, Z, Zbw, fs)
+
+% Using ARMA coefficients computes a specified number of the coefficients
+% of the corresponding real cepstrum
+%
+% INPUT:
+%    F: p/2 x numObs -- the ar coefficients for each frame of data
+%    maCoeffs: q x numObs -- the ma coefficients for each frame of data
+%    cepOrder: Number of cepstral coefficients to compute
+% OUTPUT:
+%    C - LPC Cepstral coefficients
+% 
+% Reference: 
+% Klatt, Dennis (1980). Software for a cascade/parallel formant synthesizer, JASA, Vol. 67, No.
+% 3.
+% 
+% Author: Daryush
+% Created:  4/23/2010
+% Modified: 4/23/2010
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+a=zeros(1, length(F));
+b=zeros(1, length(F));
+c=zeros(1, length(F));
+N = 1; % numerator of transfer function, Matlab format
+D = 1; % denominator of transfer function, Matlab format
+
+if ~isempty(F)
+    % resonances (formants)
+    for i = 1:length(F)
+        
+        % based on Klatt, Eq. (2) but taking into account Matlab transfer
+        % function with positive coefficients in denominator
+        b(i) = -2 * cos(2*pi*F(i)/fs) * exp(-pi*Fbw(i)/fs);
+        c(i) = exp(-2*pi*Fbw(i)/fs);
+        a(i) = 1 + b(i) + c(i);
+
+        N = N*a(i);
+        D = conv(D,[1 b(i) c(i)]);
+    end
+end
+
+if ~isempty(Z)
+    % anti-resonance (zeros)
+    for i = 1:length(Z)
+        
+        b(i) = -2 * cos(2*pi*Z(i)/fs) * exp(-pi*Zbw(i)/fs);
+        c(i) = exp(-2*pi*Zbw(i)/fs);
+        a(i) = 1 + b(i) + c(i);
+        
+        N = conv(N,[1 b(i) c(i)]);
+        D = D*a(i);
+    end
+end

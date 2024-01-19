@@ -11,7 +11,7 @@
 % 
 % function y = corrCI(x, per)
 %
-%   inputs:   x -- vector of data
+%   inputs:   x -- data in dimension numIterations x numVariables
 %             per -- confidence interval percentage; e.g., per=95 for 95%
 %                           confidence interval (p < 0.05, two-sided)
 %
@@ -26,7 +26,7 @@ ydata = mean(x, 1);
 yerror = std(x, 0, 1);
 v = var(x, 0, 1);
 
-nn = length(ydata);
+nn = size(x, 1);
 low = ydata + tinv(0.5-per/100/2, nn-1)*yerror/sqrt(nn);
 high = ydata + tinv(0.5+per/100/2, nn-1)*yerror/sqrt(nn);
 

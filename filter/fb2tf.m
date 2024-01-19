@@ -17,6 +17,9 @@ function [N, D] = fb2tf(F, Fbw, Z, Zbw, fs)
 % Reference: 
 % Klatt, Dennis (1980). Software for a cascade/parallel formant synthesizer, JASA, Vol. 67, No.
 % 3.
+% Gold, B. & Rabiner, L. (1968). Analysis of digital and analog formant
+% synthesizers. IEEE Transactions on Audio and Electroacoustics, 16, 81-94.
+% Eq. (4) and two paragraphs below Eq. (4).
 % 
 % Author: Daryush
 % Created:  4/23/2010

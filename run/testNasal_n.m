@@ -1,3 +1,5 @@
+% addpath(genpath('../')); % Set paths
+
 %%
 clear 
 
@@ -7,7 +9,7 @@ zOrder = 4;
 peCoeff = .9;
 dur = 100e-3; % s
 
-filename = '../data/DDM_speech/WAV/n.wav';
+filename = '../data/DDM_speech/n.wav';
 
 %%
 [x, fs_in] = wavread(filename);

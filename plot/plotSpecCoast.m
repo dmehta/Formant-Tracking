@@ -3,10 +3,11 @@ function [] = plotSpecCoast(E)
 % implemented and plots them onto spectrogram
 % Created : 3/23/2007, Dan S.
 % Last Updated : 3/23/2007
+% corrected xStart to half window length (does not depend on xScale)
 
 % For converting indices to time series
 xScale = 1/E.fs*E.wLength*E.wOverlap;
-xStart = xScale/2;
+xStart = E.wLength/E.fs/2;
 xInd = xStart:xScale:xStart+xScale*(size(E.estTracks(1,:,1),2)-1);
 
 for i = 1:size(E.formantInds,2)

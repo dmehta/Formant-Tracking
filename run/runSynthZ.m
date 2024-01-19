@@ -64,7 +64,7 @@ initBW       = [Fbw; Zbw]';
 %% Do a plot of the LPCCC observations
 if plot_flag
     figure;
-    imagesc(log(abs(y))); colorbar;
+    imagesc(log(abs(y_synth))); colorbar;
     title('Cepstral Coefficients');
     xlabel('Frame Number');
 end

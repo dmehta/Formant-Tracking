@@ -1,4 +1,4 @@
-function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams, sParams)
+function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, trackBW, plot_flag, algFlag, x0, aParams, sParams, f0info)
 
 % Track formants and anti-formants (no bandwidths) on synthetic data
 % that constructs a waveform using overlap-add of windows generated from an
@@ -9,6 +9,11 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 % Modified: 05/17/2010 (bandwidth contours)
 %           06/16/2010 (analysis parameters on input, x output)
 %           08/31/2010 DDM: snr_dB, cepOrder each has two values: one for synthesis, other for tracking
+%           12/13/2010 DDM: f0 as input and voicing indicator and speech
+%           indicator
+%           03/11/2011 DDM: generalizing to allow runSynth_OLA_wrapper_VTR
+%           to run this
+%           12/16/2011 DDM: f0 handling corrected
 % 
 % INPUT:
 %    F:         center frequencies of the resonances (numFormants x numFrames), in Hz
@@ -36,6 +41,7 @@ function varargout = runSynth_OLA(F, Fbw, Z, Zbw, N, snr_dB, cepOrder, fs, track
 %                     wType       % window type
 %                     wLengthMS   % Length of window (in milliseconds)
 %                     wOverlap    % Factor of overlap of window
+%    f0info:    speech/silence (1/0), voicing (1/0), and f0 (Hz) for each frame (3 x numFrames)
 % 
 % OUTPUT:
 %    Depends on algFlag. For each algorithm, three outputs then waveform, then true state--
@@ -96,13 +102,47 @@ if size(Zbw, 2) == 1
     Zbw = repmat(Zbw, 1, numFrames);
 end
 
-% output true state
-if trackBW
-    trueState = [F; Fbw; Z; Zbw];
-else
-    trueState = [F; Z]; % 
-end
+% % output true state
+% if trackBW
+%     trueState = [F; Fbw; Z; Zbw];
+% else
+%     trueState = [F; Z]; % 
+% end
 
+%%
+% source waveform
+noise_type = '1';
+vowel = 'a';
+gender = 'm';
+dur = wLengthMS/1000;
+dcFlow = 0;
+OQ = 60;
+jitter = 0;
+shimmer = 0;
+HNR = 20;
+timeOffset = 0;
+formants_bw = [80 80 80];
+formants_freq = [730 1090 2440];
+source_type = '3'; % 3 = derivative
+tilt = 0;
+SQ = 270;
+if exist('f0info','var')
+    f0 = f0info(3,:);
+    f0(f0 == 0) = 100; % need continuous signal so fix to 0
+    f0 = resample(f0, fs, round(1/(wLengthMS/1000*(1-wOverlap)))); % f0 value for every sample
+    f0(f0 < 50) = 50; % take care of boundary effects
+    if length(f0) < N
+        f0(length(f0)+1:N) = 100;
+    end
+
+    [output, fs, periodicSynth, noiseSynth, inputSource, noiseSource, actualPitchContour, ...
+        periodicSynthNoRadiation, noiseSynthNoRadiation, ARcoefs] = ...
+        vowelSynth_tilt_arbitrarysource_sourceHNR(noise_type, vowel, f0, gender, fs, dur, dcFlow, OQ, ...
+        jitter, shimmer, HNR, timeOffset, formants_freq, formants_bw, source_type, tilt, SQ);
+
+    inputSource = inputSource';
+end
+    
 for i=1:numFrames
     if ~isempty(F) && ~isempty(Z)
         [num, denom] = fb2tf(F(:, i), Fbw(:, i), Z(:, i), Zbw(:, i), fs);
@@ -115,8 +155,24 @@ for i=1:numFrames
     if isempty(F) && ~isempty(Z)
         [num, denom] = fb2tf([], [], Z(:, i), Zbw(:, i), fs);
     end
+
+    if ~exist('f0info','var')
+        tmp = filter(num, denom, randn(wLength,1)); % stochastic input
+    else
+        sInd = f0info(1, i);
+        vInd = f0info(2, i);
+        %f0   = f0info(3, i);
+        if sInd == 0 % silence frame
+            tmp = 0.01*normalize(randn(wLength,1)); %% ZERO OR SMALL NOISE??
+        else
+            if vInd > 0 % then voiced
+                tmp = normalize(filter(num, denom, inputSource(wLeft(i):wRight(i)))); % periodic input
+            else % unvoiced
+                tmp = 0.1*normalize(filter(num, denom, randn(wLength,1))); % stochastic input
+            end
+        end
+    end
     
-    tmp = filter(num, denom, randn(wLength,1));
     x(wLeft(i):wRight(i)) = x(wLeft(i):wRight(i)) + win.*tmp;
     windows(wLeft(i):wRight(i)) = windows(wLeft(i):wRight(i)) + win;
 
@@ -151,6 +207,7 @@ wLength = wLength + (mod(wLength,2)~=0); % Force even
 win = feval(wType,wLength);
 
 y = genLPCCz(x, win, wOverlap, peCoeff, lpcOrder, zOrder, cepOrder(2)); % ARMA cepstrum
+% y = genCeps(x, win, wOverlap, peCoeff, cepOrder(2)); % cepstrum
 
 %% Do a plot of the LPCCC observations
 if plot_flag
@@ -262,6 +319,6 @@ if plot_flag
 
     % A basic plotting routine to visualize results
     for j = 1:sum(algFlag)
-        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), nP);
+        plotStateTracksFZ(trueState,estTracks(:,:,j),titleCell(:,[1 j+1]), nP, trackBW);
     end
 end
